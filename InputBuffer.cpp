@@ -91,15 +91,9 @@ void InputBuffer::next() {
     current++;
     if (buffer[current] == EOF) {
         if (current == FIRST_HALF_SENTINEL) {
-//            std::cout << "[debug]: reloading second half" << std::endl;
-//            printBuffer();
-//            std::cout << std::endl;
             loadFirstHalf();
             current = SECOND_HALF_HEAD;
         } else if (current == SECOND_HALF_SENTINEL) {
-//            std::cout << "[debug]: reloading first half" << std::endl;
-//            printBuffer();
-//            std::cout << std::endl;
             loadSecondHalf();
             current = FIRST_HALF_HEAD;
         }
