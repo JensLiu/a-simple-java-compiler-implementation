@@ -7,6 +7,8 @@
 #include "Lexer.h"
 #include "InputBuffer.h"
 
+#define THROW_LEXICAL_ERROR(message) throw LexicalError(message, inputBuffer->getLine(), inputBuffer->getColumn())
+
 std::unordered_map<std::string, Token::TokenType> Lexer::KEYWORDS = {
         {"if",         Token::IF},
         {"else",       Token::ELSE},
@@ -30,8 +32,8 @@ std::unordered_map<std::string, Token::TokenType> Lexer::KEYWORDS = {
         {"void",       Token::VOID},
         {"true",       Token::BOOL_LITERAL},
         {"false",      Token::BOOL_LITERAL},
-        {"package",    Token::PACKAGE}
-
+        {"package",    Token::PACKAGE},
+        {"null",       Token::NULL_T}
 };
 
 bool Lexer::isDigit(char c) {
@@ -46,7 +48,7 @@ bool Lexer::isWhitespace(char c) {
     return c == ' ' || c == '\t' || c == '\r' || c == '\n';
 }
 
-bool Lexer::mightBeOperator(char c) {
+bool Lexer::isOperator(char c) {
     return c == '+' || c == '-' || c == '*' || c == '/' || c == '=' || c == '<' || c == '>' || c == '!' || c == '&' ||
            c == '|' || c == '^' || c == '~' || c == '%';
 }
@@ -67,7 +69,7 @@ std::string Lexer::commitLexeme() {
     std::string lexeme = std::string(tokenBuffer);
     forwardIdx = 0;
     std::fill(tokenBuffer, tokenBuffer + TOKEN_BUFFER_SIZE, '\0');
-    std::cout << "[debug]: lexeme '" << lexeme << "'" << std::endl;
+//    std::cout << "[debug]: lexeme '" << lexeme << "'" << std::endl;
     return lexeme;
 }
 
@@ -127,16 +129,18 @@ Token Lexer::nextToken() {
         return handleNumber();
     } else if (ch == '"') {
         return handleStringLiteral();
-    } else if (mightBeOperator(ch)) {
+    } else if (isOperator(ch)) {
         return handleOperator();
     } else if (isDelimiter(ch)) {
         return handleDelimiter();
     } else if (isWhitespace(ch)) {
         return handleWhitespace();
+    } else if (ch == '\'') {
+        return handleCharLiteral();
     } else if (ch == EOF) {
         return Token(Token::TokenType::END_OF_FILE);
     } else {
-        throw std::runtime_error("Unexpected character");
+        THROW_LEXICAL_ERROR("unexpected character");
     }
 
 }
@@ -177,7 +181,7 @@ Token Lexer::handleDelimiter() {
             commitLexeme();
             return Token(Token::TokenType::AT);
         default:
-            throw std::runtime_error("Unexpected delimiter");
+            THROW_LEXICAL_ERROR("Unexpected delimiter");
     }
 }
 
@@ -236,7 +240,7 @@ void Lexer::handleOptionalFractionSubroutine() {
 
     if (!isDigit(peek())) {
         // got .<non-digit> in a number
-        throw std::runtime_error("Invalid number");
+        THROW_LEXICAL_ERROR("Invalid number");
     }
 
     // we got at least one digit
@@ -255,7 +259,7 @@ void Lexer::handleOptionalExponentSubroutine() {
 
     if (!isDigit(peek())) {
         // got [Ee][+-]?<non-digit> in a number
-        throw std::runtime_error("Invalid number");
+        THROW_LEXICAL_ERROR("Invalid number");
     }
 
     // we got at least one digit
@@ -280,7 +284,7 @@ Token Lexer::handleStringLiteral() {
     // <string-literal-char> ::= ^['\]
     // <string-literal> ::= " <string-literal-char>* "
     assert(peek() == '"');
-    forward();
+    forwardIgnore();    // do not take the first "
     while (peek() != '"') {
         if (peek() == '\\') {
             forward();
@@ -289,7 +293,7 @@ Token Lexer::handleStringLiteral() {
             forward();
         }
     }
-    forward();
+    forwardIgnore();
     return Token(Token::TokenType::STRING_LITERAL, commitLexeme());
 }
 
@@ -297,7 +301,7 @@ Token Lexer::handleCharLiteral() {
     // <char-literal-char> ::= ^['\]
     // <char-literal> ::= ' <char-literal-char> '
     assert(peek() == '\'');
-    forward();
+    forwardIgnore();
     if (peek() == '\\') {
         forward();
         handleEscapeSubroutine();
@@ -345,18 +349,17 @@ void Lexer::handleEscapeSubroutine() {
                 original = '\\';
                 break;
             default:
-                throw std::runtime_error("Invalid escape sequence");
+                THROW_LEXICAL_ERROR("Invalid escape sequence");
         }
         tokenBuffer[forwardIdx - 1] = original;
         inputBuffer->next();
     } else {
-        throw std::runtime_error("Invalid escape sequence");
+        THROW_LEXICAL_ERROR("Invalid escape sequence");
     }
 }
 
 void Lexer::handleSingleLineCommentSubroutine() {
     assert(currentChar() == '/');
-    std::cout << "handling single line comment" << std::endl;
     while (peek() != '\n') {
         forwardIgnore();
     }
@@ -374,7 +377,7 @@ void Lexer::handleMultiLineCommentSubroutine() {
 }
 
 Token Lexer::handleOperator() {
-    assert(mightBeOperator(peek()));
+    assert(isOperator(peek()));
     forward();
 
     char ch = currentChar();
@@ -516,11 +519,10 @@ Token Lexer::handleOperator() {
             return Token(Token::TokenType::PERCENT);
         }
     } else {
-        throw std::runtime_error("Invalid operator");
+        THROW_LEXICAL_ERROR("Invalid operator");
     }
 }
 
 Lexer::Lexer(InputBuffer *inputBuffer) {
     this->inputBuffer = inputBuffer;
-//    this->tokenBuffer = new char[TOKEN_BUFFER_SIZE];
 }
