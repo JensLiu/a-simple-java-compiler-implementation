@@ -5,7 +5,7 @@
 #ifndef COMPILER_TOKEN_H
 #define COMPILER_TOKEN_H
 
-
+#include <unordered_map>
 #include <string>
 
 class Token {
@@ -14,7 +14,7 @@ public:
         // Keywords
         IF, ELSE, WHILE, RETURN, CLASS, EXTENDS, IMPLEMENTS, NEW, THIS, SUPER, PUBLIC, PRIVATE, PROTECTED, STATIC, PACKAGE,
         // Types
-        INT, FLOAT, BOOL, CHAR, STRING, VOID,
+        INT, FLOAT, BOOL, CHAR, STRING, VOID, NULL_T,
         // Literals
         IDENTIFIER, INTEGER_LITERAL, FLOAT_LITERAL, CHAR_LITERAL, STRING_LITERAL, BOOL_LITERAL,
         // Operators
@@ -26,18 +26,26 @@ public:
         // Delimiters
         SEMICOLON, COMMA, DOT, LEFT_PAREN, RIGHT_PAREN, LEFT_BRACE, RIGHT_BRACE, LEFT_BRACKET, RIGHT_BRACKET, AT,
         // Special
-        END_OF_FILE, ERROR, WHITESPACE
+        END_OF_FILE, ERROR, WHITESPACE,
+        // to be used in the parser
+        EPSILON, INVALID_TOKEN
     };
 
+    static const std::unordered_map<TokenType, std::string> tokenName;
+    static std::string tokenTypeAsString(const TokenType &tokenType);
+
 private:
-    TokenType tokenType;
     std::string lexeme;
+    TokenType tokenType;
 
 public:
     explicit Token(const TokenType &tokenType);
     Token(const TokenType &tokenType, const std::string &lexeme);
     TokenType getTokenType() const;
     const std::string &getLexeme() const;
+
+    friend std::ostream &operator<<(std::ostream &os, const Token &token);
+
 };
 
 
