@@ -59,17 +59,6 @@ ContextFreeGrammar::ContextFreeGrammar(const std::vector<Production> &production
     }
 }
 
-void ContextFreeGrammar::printFirstTableForNonTerminals() {
-    if (status < FIRST_COMPUTED) findFirstForNonTerminals();
-    for (const auto &pair: FIRST) {
-        std::cout << "FIRST[" << pair.first << "] = {";
-        for (const GrammarSymbol &symbol: pair.second) {
-            std::cout << "'" << symbol << "' ";
-        }
-        std::cout << "}" << std::endl;
-    }
-}
-
 void ContextFreeGrammar::findFirstForNonTerminals() {
     if (this->status >= FIRST_COMPUTED) return;
     INSTALL_CHANGE_DETECTOR(unsigned)
@@ -179,7 +168,7 @@ void ContextFreeGrammar::findParsingTableLL1() {
             // (2) FIRST[s] intersection FOLLOW[s] is not empty,
             // place the production of preference below so that it can override the previous effect
 
-            if (p.epsilonBody()) {
+            if (p.isEpsilon()) {
                 // for productions such as A ::= epsilon, we add it to columns with respect to their FOLLOW set
                 for (const GrammarSymbol &nt: FOLLOW[s]) {
                     entryForS.insert({nt, p});
@@ -211,4 +200,52 @@ void ContextFreeGrammar::printParsingTable() {
         }
         std::cout << std::endl;
     }
+}
+
+void ContextFreeGrammar::printFirstTableForNonTerminals() {
+    if (status < FIRST_COMPUTED) findFirstForNonTerminals();
+    for (const auto &pair: FIRST) {
+        std::cout << "FIRST[" << pair.first << "] = {";
+        for (const GrammarSymbol &symbol: pair.second) {
+            std::cout << "'" << symbol << "' ";
+        }
+        std::cout << "}" << std::endl;
+    }
+}
+
+void ContextFreeGrammar::printFirstTableForProductions() {
+    if (status < FIRST_P_COMPUTED) findFirstForProductions();
+    for (const auto &pair: FIRST_P) {
+        std::cout << "FIRST_P[" << pair.first << "] = {";
+        for (const GrammarSymbol &symbol: pair.second) {
+            std::cout << "'" << symbol << "' ";
+        }
+        std::cout << "}" << std::endl;
+    }
+}
+
+void ContextFreeGrammar::printFollowTable() {
+    if (status < FOLLOW_COMPUTED) findFollow();
+    for (const auto &pair: FOLLOW) {
+        std::cout << "FOLLOW[" << pair.first << "] = {";
+        for (const GrammarSymbol &symbol: pair.second) {
+            std::cout << "'" << symbol << "' ";
+        }
+        std::cout << "}" << std::endl;
+    }
+}
+
+GrammarSymbol &ContextFreeGrammar::getStartSymbol() {
+    return productions[0].head;
+}
+
+std::variant<Production, ErrorStrategy>
+ContextFreeGrammar::predict(const GrammarSymbol &current, const GrammarSymbol &onInput) {
+    if (this->status < PARSING_TABLE_COMPUTED) findParsingTableLL1();
+
+    const Production &p = PARSING_TABLE[current][onInput];
+    if (!p.isValid()) {
+        return ErrorStrategy("error, do nothing");
+    }
+    return p;
 }

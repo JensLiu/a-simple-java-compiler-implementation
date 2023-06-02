@@ -7,8 +7,16 @@
 
 
 #include <unordered_set>
+#include <variant>
 #include "GrammarSymbol.h"
 #include "Production.h"
+
+class ErrorStrategy {
+private:
+    std::string message;
+public:
+    ErrorStrategy(const std::string &message): message(message) {}
+};
 
 class ContextFreeGrammar {
 public:
@@ -34,16 +42,17 @@ private:
 
 public:
     explicit ContextFreeGrammar(const std::vector<Production> &productions);
-    void printFirstTableForNonTerminals();
-
     void findFirstForNonTerminals();
     void findFirstForProductions();
     void findFollow();
     void findParsingTableLL1();
-
+    void printFirstTableForNonTerminals();
+    void printFirstTableForProductions();
+    void printFollowTable();
     void printParsingTable();
 
+    GrammarSymbol &getStartSymbol();
+    std::variant<Production, ErrorStrategy> predict(const GrammarSymbol &current, const GrammarSymbol &onInput);
 };
-
 
 #endif //COMPILER_CONTEXTFREEGRAMMAR_H
