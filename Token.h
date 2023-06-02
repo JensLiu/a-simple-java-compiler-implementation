@@ -37,12 +37,21 @@ public:
 private:
     std::string lexeme;
     TokenType tokenType;
+//    int symbolTableIndex;
+    int line;
+    int column;
 
 public:
-    explicit Token(const TokenType &tokenType);
-    Token(const TokenType &tokenType, const std::string &lexeme);
-    TokenType getTokenType() const;
-    const std::string &getLexeme() const;
+    explicit Token(const TokenType &tokenType);     // this is used when token is treated as a terminal in grammar
+    Token(const TokenType &tokenType, const std::string &lexeme, int line, int column);     // for numbers
+//    Token(const TokenType &tokenType, const std::string &lexeme, int symbolTableIndex, int line, int column);   // for identifiers
+    Token(const TokenType &tokenType, int line, int column);    // others
+    [[nodiscard]] TokenType getTokenType() const;
+    [[nodiscard]] const std::string &getLexeme() const;
+    [[nodiscard]] int getLine() const;
+    [[nodiscard]] int getColumn() const;
+    [[nodiscard]] bool isEOF() const;
+    [[nodiscard]] bool isWhitespace() const;
 
     friend std::ostream &operator<<(std::ostream &os, const Token &token);
 

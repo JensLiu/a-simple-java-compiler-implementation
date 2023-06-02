@@ -5,15 +5,36 @@
 #include "Token.h"
 #include <ostream>
 
-Token::Token(const Token::TokenType &tokenType, const std::string &lexeme) {
-    this->tokenType = tokenType;
-    this->lexeme = lexeme;
-}
-
 Token::Token(const Token::TokenType &tokenType) {
     this->tokenType = tokenType;
     this->lexeme = "";
+    this->line = -1;
+    this->column = -1;
+//    this->symbolTableIndex = -1;
 }
+
+Token::Token(const Token::TokenType &tokenType, int line, int column) {
+    this->tokenType = tokenType;
+    this->lexeme = "";
+    this->line = line;
+    this->column = column;
+//    this->symbolTableIndex = -1;
+}
+
+Token::Token(const Token::TokenType &tokenType, const std::string &lexeme, int line, int column) {
+    this->tokenType = tokenType;
+    this->lexeme = lexeme;
+    this->line = line;
+    this->column = column;
+}
+
+//Token::Token(const Token::TokenType &tokenType, const std::string &lexeme, int symbolTableIndex, int line, int column) {
+//    this->tokenType = tokenType;
+//    this->lexeme = lexeme;
+//    this->symbolTableIndex = symbolTableIndex;
+//    this->line = line;
+//    this->column = column;
+//}
 
 Token::TokenType Token::getTokenType() const {
     return this->tokenType;
@@ -107,4 +128,20 @@ const std::unordered_map<Token::TokenType, std::string> Token::tokenName = {
 
 std::string Token::tokenTypeAsString(const Token::TokenType &tokenType) {
     return tokenName.at(tokenType);
+}
+
+int Token::getLine() const {
+    return this->line;
+}
+
+int Token::getColumn() const {
+    return this->column;
+}
+
+bool Token::isEOF() const {
+    return this->tokenType == TokenType::END_OF_FILE;
+}
+
+bool Token::isWhitespace() const {
+    return this->tokenType == TokenType::WHITESPACE;
 }
