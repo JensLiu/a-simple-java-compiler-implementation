@@ -158,15 +158,15 @@ void ContextFreeGrammar::findParsingTableLL1() {
         // find all productions of this symbol
 
         parsing_table_entry_t entryForS;
-
-        for (const Production &p: productions) {
+        for (const Production& p : productions) {
             if (p.head != s) continue;
             // for each production with head s
 
             // NOTE: Had there been any collision when
             // (1) epsilon is in FIRST[s] and
             // (2) FIRST[s] intersection FOLLOW[s] is not empty,
-            // place the production of preference below so that it can override the previous effect
+            // place the production of preference as the first occurrence of its kind
+            // so that it can override the previous effect (since latter cannot be inserted again into the set)
 
             if (p.isEpsilon()) {
                 // for productions such as A ::= epsilon, we add it to columns with respect to their FOLLOW set
@@ -202,7 +202,7 @@ void ContextFreeGrammar::printParsingTable() {
     }
 }
 
-void ContextFreeGrammar::printFirstTableForNonTerminals() {
+void ContextFreeGrammar::printFirstSetForNonTerminals() {
     if (status < FIRST_COMPUTED) findFirstForNonTerminals();
     for (const auto &pair: FIRST) {
         std::cout << "FIRST[" << pair.first << "] = {";
@@ -213,7 +213,7 @@ void ContextFreeGrammar::printFirstTableForNonTerminals() {
     }
 }
 
-void ContextFreeGrammar::printFirstTableForProductions() {
+void ContextFreeGrammar::printFirstSetForProductions() {
     if (status < FIRST_P_COMPUTED) findFirstForProductions();
     for (const auto &pair: FIRST_P) {
         std::cout << "FIRST_P[" << pair.first << "] = {";
@@ -224,7 +224,7 @@ void ContextFreeGrammar::printFirstTableForProductions() {
     }
 }
 
-void ContextFreeGrammar::printFollowTable() {
+void ContextFreeGrammar::printFollowSet() {
     if (status < FOLLOW_COMPUTED) findFollow();
     for (const auto &pair: FOLLOW) {
         std::cout << "FOLLOW[" << pair.first << "] = {";
@@ -248,4 +248,10 @@ ContextFreeGrammar::predict(const GrammarSymbol &current, const GrammarSymbol &o
         return ErrorStrategy("error, do nothing");
     }
     return p;
+}
+
+void ContextFreeGrammar::printProductions() {
+    for (const Production &p : productions) {
+        std::cout << p << std::endl;
+    }
 }

@@ -46,10 +46,11 @@ public:
     void findFirstForProductions();
     void findFollow();
     void findParsingTableLL1();
-    void printFirstTableForNonTerminals();
-    void printFirstTableForProductions();
-    void printFollowTable();
+    void printFirstSetForNonTerminals();
+    void printFirstSetForProductions();
+    void printFollowSet();
     void printParsingTable();
+    void printProductions();
 
     GrammarSymbol &getStartSymbol();
     std::variant<Production, ErrorStrategy> predict(const GrammarSymbol &current, const GrammarSymbol &onInput);
