@@ -16,17 +16,15 @@ private:
 public:
     GrammarSymbol head;
     std::vector<GrammarSymbol> body;
+
 public:
     Production(const GrammarSymbol &head, const std::vector<GrammarSymbol> &body);
-
     Production(int id, const GrammarSymbol &head, const std::vector<GrammarSymbol> &body);
-
-    int getId() const { return this->id; }
-
+    Production(const Production &production) = default;
+    [[nodiscard]] int getId() const { return this->id; }
     friend std::ostream &operator<<(std::ostream &os, const Production &production);
-
-    void printProduction() const;
-
+    bool operator==(const Production &other) const;
+    bool epsilonBody() const;
 };
 
 template<>
