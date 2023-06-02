@@ -9,6 +9,10 @@
 #include <ostream>
 #include "Token.h"
 
+#define HEAD(x) GrammarSymbol::createNonTerminal(x)
+#define NT(x) GrammarSymbol::createNonTerminal(x)
+#define T(x) GrammarSymbol::createTerminal(x)
+
 class GrammarSymbol {
 public:
     using SymbolType = enum {
