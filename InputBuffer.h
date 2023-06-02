@@ -11,7 +11,7 @@
 
 class InputBuffer {
 public:
-    static int const BUFFER_SIZE = 5;
+    static int const BUFFER_SIZE = 1024;
 private:
     // index arithmetics
     static int const HALF_BUFFER_SIZE = BUFFER_SIZE;
