@@ -12,7 +12,7 @@
 class GrammarSymbol {
 public:
     using SymbolType = enum {
-        TERMINAL, NONTERMINAL, EPSILON, END_OF_FILE
+        TERMINAL, NONTERMINAL, INVALID_SYMBOL
     };
 private:
     GrammarSymbol(const SymbolType &type, const std::string &nonTerminal, const Token::TokenType &terminal);
@@ -21,19 +21,21 @@ private:
     std::string nonTerminal;
     Token::TokenType terminal;
 public:
+    GrammarSymbol();    // default constructor to construct a invalid symbol
     static GrammarSymbol createNonTerminal(const std::string& name);
     static GrammarSymbol createTerminal(const Token::TokenType &token);
     static GrammarSymbol epsilon();
     static GrammarSymbol eof();
+    static GrammarSymbol invalid();
 
     [[nodiscard]] SymbolType getType() const;
     [[nodiscard]] std::string getNonTerminal() const;
     [[nodiscard]] Token::TokenType getTerminal() const;
 
-
     [[nodiscard]] bool isTerminal() const;
     [[nodiscard]] bool isEOF() const;
     [[nodiscard]] bool isEpsilon() const;
+    [[nodiscard]] bool isValid() const;
 
     bool operator==(const GrammarSymbol &other) const;
     bool operator!=(const GrammarSymbol &other) const;

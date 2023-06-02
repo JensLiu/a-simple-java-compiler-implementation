@@ -9,6 +9,9 @@ GrammarSymbol::SymbolType GrammarSymbol::getType() const {
 }
 
 bool GrammarSymbol::operator==(const GrammarSymbol &other) const {
+    if (this->type == INVALID_SYMBOL) {
+        return false;
+    }
     if (this->type != other.type) {
         return false;
     }
@@ -16,16 +19,13 @@ bool GrammarSymbol::operator==(const GrammarSymbol &other) const {
         return this->terminal == other.terminal;
     } else if (this->type == NONTERMINAL) {
         return this->nonTerminal == other.nonTerminal;  // std::string == overloaded
-    } else if (this->type == EPSILON || this->type == END_OF_FILE) {
-        return true;
     } else {
         return false;
     }
 }
 
 bool GrammarSymbol::isTerminal() const {
-    return this->type == SymbolType::TERMINAL || this->type == SymbolType::END_OF_FILE ||
-           this->type == SymbolType::EPSILON;
+    return this->type == SymbolType::TERMINAL;
 }
 
 GrammarSymbol::GrammarSymbol(const GrammarSymbol::SymbolType &type, const std::string &nonTerminal,
@@ -41,11 +41,11 @@ GrammarSymbol GrammarSymbol::createTerminal(const Token::TokenType &token) {
 }
 
 GrammarSymbol GrammarSymbol::epsilon() {
-    return GrammarSymbol(SymbolType::EPSILON, "", Token::TokenType::EPSILON);
+    return GrammarSymbol(SymbolType::TERMINAL, "", Token::TokenType::EPSILON);
 }
 
 GrammarSymbol GrammarSymbol::eof() {
-    return GrammarSymbol(SymbolType::END_OF_FILE, "", Token::TokenType::END_OF_FILE);
+    return GrammarSymbol(SymbolType::TERMINAL, "", Token::TokenType::END_OF_FILE);
 }
 
 std::string GrammarSymbol::getNonTerminal() const {
@@ -57,11 +57,11 @@ Token::TokenType GrammarSymbol::getTerminal() const {
 }
 
 bool GrammarSymbol::isEOF() const {
-    return this->type == SymbolType::END_OF_FILE;
+    return this->terminal == Token::TokenType::END_OF_FILE;
 }
 
 bool GrammarSymbol::isEpsilon() const {
-    return this->type == SymbolType::EPSILON;
+    return this->terminal == Token::TokenType::EPSILON;
 }
 
 std::ostream &operator<<(std::ostream &os, const GrammarSymbol &grammarSymbol) {
@@ -75,6 +75,20 @@ std::ostream &operator<<(std::ostream &os, const GrammarSymbol &grammarSymbol) {
 
 bool GrammarSymbol::operator!=(const GrammarSymbol &other) const {
     return !(*this == other);
+}
+
+GrammarSymbol GrammarSymbol::invalid() {
+    return GrammarSymbol(SymbolType::INVALID_SYMBOL, "", Token::TokenType::INVALID_TOKEN);
+}
+
+bool GrammarSymbol::isValid() const {
+    return this->type != INVALID_SYMBOL;
+}
+
+GrammarSymbol::GrammarSymbol() {
+    this->type = INVALID_SYMBOL;
+    this->terminal = Token::TokenType::INVALID_TOKEN;
+    this->nonTerminal = "";
 }
 
 
