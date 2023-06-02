@@ -36,6 +36,7 @@ public:
     [[nodiscard]] bool isEpsilon() const;
 
     bool operator==(const GrammarSymbol &other) const;
+    bool operator!=(const GrammarSymbol &other) const;
     friend std::ostream &operator<<(std::ostream &os, const GrammarSymbol &grammarSymbol);
 
 };

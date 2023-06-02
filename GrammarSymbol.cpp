@@ -73,4 +73,8 @@ std::ostream &operator<<(std::ostream &os, const GrammarSymbol &grammarSymbol) {
     return os;
 }
 
+bool GrammarSymbol::operator!=(const GrammarSymbol &other) const {
+    return !(*this == other);
+}
+
 
