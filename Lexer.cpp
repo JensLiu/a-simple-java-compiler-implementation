@@ -151,41 +151,41 @@ Token Lexer::handleDelimiter() {
     switch (currentChar()) {
         case '(':
             commitLexeme();
-            return Token(Token::TokenType::LEFT_PAREN);
+            return Token(Token::TokenType::LEFT_PAREN, inputBuffer->getLine(), inputBuffer->getColumn());
         case ')':
             commitLexeme();
-            return Token(Token::TokenType::RIGHT_PAREN);
+            return Token(Token::TokenType::RIGHT_PAREN, inputBuffer->getLine(), inputBuffer->getColumn());
         case '{':
             commitLexeme();
-            return Token(Token::TokenType::LEFT_BRACE);
+            return Token(Token::TokenType::LEFT_BRACE, inputBuffer->getLine(), inputBuffer->getColumn());
         case '}':
             commitLexeme();
-            return Token(Token::TokenType::RIGHT_BRACE);
+            return Token(Token::TokenType::RIGHT_BRACE, inputBuffer->getLine(), inputBuffer->getColumn());
         case '[':
             commitLexeme();
-            return Token(Token::TokenType::LEFT_BRACKET);
+            return Token(Token::TokenType::LEFT_BRACKET, inputBuffer->getLine(), inputBuffer->getColumn());
         case ']':
             commitLexeme();
-            return Token(Token::TokenType::RIGHT_BRACKET);
+            return Token(Token::TokenType::RIGHT_BRACKET, inputBuffer->getLine(), inputBuffer->getColumn());
         case ';':
             commitLexeme();
-            return Token(Token::TokenType::SEMICOLON);
+            return Token(Token::TokenType::SEMICOLON, inputBuffer->getLine(), inputBuffer->getColumn());
         case ',':
             commitLexeme();
-            return Token(Token::TokenType::COMMA);
+            return Token(Token::TokenType::COMMA, inputBuffer->getLine(), inputBuffer->getColumn());
         case '.':
             commitLexeme();
-            return Token(Token::TokenType::DOT);
+            return Token(Token::TokenType::DOT, inputBuffer->getLine(), inputBuffer->getColumn());
         case '@':
             commitLexeme();
-            return Token(Token::TokenType::AT);
+            return Token(Token::TokenType::AT, inputBuffer->getLine(), inputBuffer->getColumn());
         default:
             THROW_LEXICAL_ERROR("Unexpected delimiter");
     }
 }
 
 Token Lexer::handleIdentifier() {
-    // <identifier> ::= [a-zA-Z_][a-zA-Z0-9_]*
+    // <identifier> ::= [a-zA-Z_$][a-zA-Z0-9_$]*
     assert(isLetter(peek()) || peek() == '_' || peek() == '$');
     forward();
     while (isDigit(peek()) || isLetter(peek()) || peek() == '_' || peek() == '$') {
@@ -195,7 +195,7 @@ Token Lexer::handleIdentifier() {
     if (KEYWORDS.find(lexeme) != KEYWORDS.end()) {
         return Token(KEYWORDS[lexeme]);
     }
-    return Token(Token::TokenType::IDENTIFIER, lexeme);
+    return Token(Token::TokenType::IDENTIFIER, lexeme, inputBuffer->getLine(), inputBuffer->getColumn());
 }
 
 Token Lexer::handleNumber() {
@@ -224,10 +224,10 @@ Token Lexer::handleNumber() {
             forward();
             handleOptionalExponentSubroutine();
         }
-        return Token(Token::TokenType::FLOAT_LITERAL, commitLexeme());
+        return Token(Token::TokenType::FLOAT_LITERAL, commitLexeme(), inputBuffer->getLine(), inputBuffer->getColumn());
     } else {
         // integer number
-        return Token(Token::TokenType::INTEGER_LITERAL, commitLexeme());
+        return Token(Token::TokenType::INTEGER_LITERAL, commitLexeme(), inputBuffer->getLine(), inputBuffer->getColumn());
     }
 
 
@@ -275,7 +275,7 @@ Token Lexer::handleWhitespace() {
         forwardIgnore();
     }
     commitLexeme();
-    return Token(Token::TokenType::WHITESPACE);
+    return Token(Token::TokenType::WHITESPACE, inputBuffer->getLine(), inputBuffer->getColumn());
 }
 
 
@@ -293,7 +293,7 @@ Token Lexer::handleStringLiteral() {
         }
     }
     forwardIgnore();
-    return Token(Token::TokenType::STRING_LITERAL, commitLexeme());
+    return Token(Token::TokenType::STRING_LITERAL, commitLexeme(), inputBuffer->getLine(), inputBuffer->getColumn());
 }
 
 Token Lexer::handleCharLiteral() {
@@ -304,10 +304,10 @@ Token Lexer::handleCharLiteral() {
     if (peek() == '\\') {
         forward();
         handleEscapeSubroutine();
-        return Token(Token::TokenType::CHAR_LITERAL, commitLexeme());
+        return Token(Token::TokenType::CHAR_LITERAL, commitLexeme(), inputBuffer->getLine(), inputBuffer->getColumn());
     } else {
         forward();
-        return Token(Token::TokenType::CHAR_LITERAL, commitLexeme());
+        return Token(Token::TokenType::CHAR_LITERAL, commitLexeme(), inputBuffer->getLine(), inputBuffer->getColumn());
     }
 }
 
@@ -385,143 +385,144 @@ Token Lexer::handleOperator() {
         if (peek() == '+') {
             forward();
             commitLexeme();
-            return Token(Token::TokenType::INCREMENT);
+            return Token(Token::TokenType::INCREMENT, inputBuffer->getLine(), inputBuffer->getColumn());
         } else if (peek() == '=') {
             forward();
             commitLexeme();
-            return Token(Token::TokenType::PLUS_ASSIGNMENT);
+            return Token(Token::TokenType::PLUS_ASSIGNMENT, inputBuffer->getLine(), inputBuffer->getColumn());
         } else {
             commitLexeme();
-            return Token(Token::TokenType::PLUS);
+            return Token(Token::TokenType::PLUS, inputBuffer->getLine(), inputBuffer->getColumn());
         }
     } else if (ch == '-') {
         if (peek() == '-') {
             forward();
             commitLexeme();
-            return Token(Token::TokenType::DECREMENT);
+            return Token(Token::TokenType::DECREMENT, inputBuffer->getLine(), inputBuffer->getColumn());
         } else if (peek() == '=') {
             forward();
             commitLexeme();
-            return Token(Token::TokenType::MINUS_ASSIGNMENT);
+            return Token(Token::TokenType::MINUS_ASSIGNMENT, inputBuffer->getLine(), inputBuffer->getColumn());
         } else if (peek() == '>') {
             forward();
             commitLexeme();
-            return Token(Token::TokenType::RIGHT_ARROW);
+            return Token(Token::TokenType::RIGHT_ARROW, inputBuffer->getLine(), inputBuffer->getColumn());
         } else {
             commitLexeme();
-            return Token(Token::TokenType::MINUS);
+            return Token(Token::TokenType::MINUS, inputBuffer->getLine(), inputBuffer->getColumn());
         }
     } else if (ch == '*') {
         if (peek() == '=') {
             forward();
             commitLexeme();
-            return Token(Token::TokenType::STAR_ASSIGNMENT);
+            return Token(Token::TokenType::STAR_ASSIGNMENT, inputBuffer->getLine(), inputBuffer->getColumn());
         } else {
             commitLexeme();
-            return Token(Token::TokenType::STAR);
+            return Token(Token::TokenType::STAR, inputBuffer->getLine(), inputBuffer->getColumn());
         }
     } else if (ch == '/') {
         if (peek() == '=') {
             forward();
             commitLexeme();
-            return Token(Token::TokenType::SLASH_ASSIGNMENT);
+            return Token(Token::TokenType::SLASH_ASSIGNMENT, inputBuffer->getLine(), inputBuffer->getColumn());
         } else if (peek() == '/') {     // single line comment
             forward();
             handleSingleLineCommentSubroutine();
             commitLexeme();
-            return Token(Token::TokenType::WHITESPACE);
+            return Token(Token::TokenType::WHITESPACE, inputBuffer->getLine(), inputBuffer->getColumn());
         } else if (peek() == '*') {     // multi line comment
             forward();
             handleMultiLineCommentSubroutine();
             commitLexeme();
-            return Token(Token::TokenType::WHITESPACE);
+            return Token(Token::TokenType::WHITESPACE, inputBuffer->getLine(), inputBuffer->getColumn());
         } else {
             commitLexeme();
-            return Token(Token::TokenType::SLASH);
+            return Token(Token::TokenType::SLASH, inputBuffer->getLine(), inputBuffer->getColumn());
         }
     } else if (ch == '=') {
         if (peek() == '=') {
             forward();
             commitLexeme();
-            return Token(Token::TokenType::EQUALS);
+            return Token(Token::TokenType::EQUALS, inputBuffer->getLine(), inputBuffer->getColumn());
         } else {
             commitLexeme();
-            return Token(Token::TokenType::ASSIGNMENT);
+            return Token(Token::TokenType::ASSIGNMENT, inputBuffer->getLine(), inputBuffer->getColumn());
         }
     } else if (ch == '<') {
         if (peek() == '=') {
             forward();
             commitLexeme();
-            return Token(Token::TokenType::LESS_THAN_OR_EQUAL);
+            return Token(Token::TokenType::LESS_THAN_OR_EQUAL, inputBuffer->getLine(), inputBuffer->getColumn());
         } else {
             commitLexeme();
-            return Token(Token::TokenType::LESS_THAN);
+            return Token(Token::TokenType::LESS_THAN, inputBuffer->getLine(), inputBuffer->getColumn());
         }
     } else if (ch == '>') {
         if (peek() == '=') {
             forward();
             commitLexeme();
-            return Token(Token::TokenType::GREATER_THAN_OR_EQUAL);
+            return Token(Token::TokenType::GREATER_THAN_OR_EQUAL, inputBuffer->getLine(), inputBuffer->getColumn());
         } else {
             commitLexeme();
-            return Token(Token::TokenType::GREATER_THAN);
+            return Token(Token::TokenType::GREATER_THAN, inputBuffer->getLine(), inputBuffer->getColumn());
         }
     } else if (ch == '!') {
         if (peek() == '=') {
             forward();
             commitLexeme();
-            return Token(Token::TokenType::NOT_EQUALS);
+            return Token(Token::TokenType::NOT_EQUALS, inputBuffer->getLine(), inputBuffer->getColumn());
         } else {
             commitLexeme();
-            return Token(Token::TokenType::LOGICAL_NOT);
+            return Token(Token::TokenType::LOGICAL_NOT, inputBuffer->getLine(), inputBuffer->getColumn());
         }
     } else if (ch == '&') {
         if (peek() == '&') {
             forward();
             commitLexeme();
-            return Token(Token::TokenType::LOGICAL_AND);
+            return Token(Token::TokenType::LOGICAL_AND, inputBuffer->getLine(), inputBuffer->getColumn());
         } else {
             commitLexeme();
-            return Token(Token::TokenType::AMPERSAND);
+            return Token(Token::TokenType::AMPERSAND, inputBuffer->getLine(), inputBuffer->getColumn());
         }
     } else if (ch == '|') {
         if (peek() == '|') {
             forward();
             commitLexeme();
-            return Token(Token::TokenType::LOGICAL_OR);
+            return Token(Token::TokenType::LOGICAL_OR, inputBuffer->getLine(), inputBuffer->getColumn());
         } else if (peek() == '=') {
             forward();
             commitLexeme();
-            return Token(Token::TokenType::PIPE_ASSIGNMENT);
+            return Token(Token::TokenType::PIPE_ASSIGNMENT, inputBuffer->getLine(), inputBuffer->getColumn());
         } else {
             commitLexeme();
-            return Token(Token::TokenType::PIPE);
+            return Token(Token::TokenType::PIPE, inputBuffer->getLine(), inputBuffer->getColumn());
         }
     } else if (ch == '^') {
         if (peek() == '=') {
             forward();
             commitLexeme();
-            return Token(Token::TokenType::CARET_ASSIGNMENT);
+            return Token(Token::TokenType::CARET_ASSIGNMENT, inputBuffer->getLine(), inputBuffer->getColumn());
         } else {
             commitLexeme();
-            return Token(Token::TokenType::CARET);
+            return Token(Token::TokenType::CARET, inputBuffer->getLine(), inputBuffer->getColumn());
         }
     } else if (ch == '~') {
         commitLexeme();
-        return Token(Token::TokenType::TILDE);
+        return Token(Token::TokenType::TILDE, inputBuffer->getLine(), inputBuffer->getColumn());
     } else if (ch == '%') {
         if (peek() == '=') {
             commitLexeme();
-            return Token(Token::TokenType::PERCENT_ASSIGNMENT);
+            return Token(Token::TokenType::PERCENT_ASSIGNMENT, inputBuffer->getLine(), inputBuffer->getColumn());
         } else {
             commitLexeme();
-            return Token(Token::TokenType::PERCENT);
+            return Token(Token::TokenType::PERCENT, inputBuffer->getLine(), inputBuffer->getColumn());
         }
     } else {
         THROW_LEXICAL_ERROR("Invalid operator");
     }
 }
 
-Lexer::Lexer(InputBuffer *inputBuffer) {
+Lexer::Lexer(InputBuffer *inputBuffer, SymbolTable *symbolTable) {
     this->inputBuffer = inputBuffer;
+    this->symbolTable = symbolTable;
 }

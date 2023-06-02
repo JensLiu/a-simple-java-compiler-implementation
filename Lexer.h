@@ -8,21 +8,23 @@
 #include <unordered_map>
 #include "Token.h"
 #include "InputBuffer.h"
+#include "SymbolTable.h"
 
 class Lexer {
 public:
+    static std::unordered_map<std::string, Token::TokenType> KEYWORDS;
     static bool isDigit(char c);
     static bool isLetter(char c);
     static bool isWhitespace(char c);
     static bool isOperator(char c);
+    static bool isDelimiter(char c);
     static const int TOKEN_BUFFER_SIZE = 1024;
-
-public:
-    explicit Lexer(InputBuffer *inputBuffer);
 
 private:
     InputBuffer *inputBuffer;
     char tokenBuffer[TOKEN_BUFFER_SIZE]{};
+    SymbolTable *symbolTable;
+
     int forwardIdx = 0;
     char currentChar();
     char peek();
@@ -36,22 +38,17 @@ private:
     void handleOptionalExponentSubroutine();
     Token handleOperator();
     Token handleWhitespace();
-
+    Token handleCharLiteral();
     Token handleStringLiteral();
     void handleEscapeSubroutine();
-
+    Token handleDelimiter();
     void handleSingleLineCommentSubroutine();
-
     void handleMultiLineCommentSubroutine();
 
 public:
+    Lexer(InputBuffer *inputBuffer, SymbolTable *symbolTable);
     Token nextToken();
-    Token handleCharLiteral();
-    static std::unordered_map<std::string, Token::TokenType> KEYWORDS;
 
-    Token handleDelimiter();
-
-    static bool isDelimiter(char c);
 };
 
 class LexicalError : public std::runtime_error {
