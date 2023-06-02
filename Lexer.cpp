@@ -69,7 +69,6 @@ std::string Lexer::commitLexeme() {
     std::string lexeme = std::string(tokenBuffer);
     forwardIdx = 0;
     std::fill(tokenBuffer, tokenBuffer + TOKEN_BUFFER_SIZE, '\0');
-//    std::cout << "[debug]: lexeme '" << lexeme << "'" << std::endl;
     return lexeme;
 }
 
