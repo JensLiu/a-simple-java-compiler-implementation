@@ -13,20 +13,36 @@
 class ContextFreeGrammar {
 public:
     using first_set_entry_t = std::unordered_set<GrammarSymbol>;
-    using first_set_t = std::unordered_map<GrammarSymbol, first_set_entry_t>;
+    using first_set_terminal_t = std::unordered_map<GrammarSymbol, first_set_entry_t>;
     using follow_set_entry_t = std::unordered_set<GrammarSymbol>;
     using follow_set_t = std::unordered_map<GrammarSymbol, follow_set_entry_t>;
+    using first_set_production_t = std::unordered_map<Production, first_set_entry_t>;
+    using parsing_table_entry_t = std::unordered_map<GrammarSymbol, Production>;
+    using parsing_table_t = std::unordered_map<GrammarSymbol, parsing_table_entry_t>;
+
 private:
     std::unordered_set<GrammarSymbol> nonTermimals;
+    std::unordered_set<GrammarSymbol> terminals;
     std::vector<Production> productions;
-    first_set_t FIRST;
+    using InternalStatus = enum {INITIAL, FIRST_COMPUTED, FIRST_P_COMPUTED, FOLLOW_COMPUTED, PARSING_TABLE_COMPUTED};
+    InternalStatus status = INITIAL;
+    first_set_terminal_t FIRST;
+    first_set_production_t FIRST_P;
     follow_set_t FOLLOW;
-    void initFirstAndFollowSet();
+    parsing_table_t PARSING_TABLE;
+
 
 public:
-    ContextFreeGrammar(const std::vector<Production> &productions);
+    explicit ContextFreeGrammar(const std::vector<Production> &productions);
+    void printFirstTableForNonTerminals();
 
     void findFirstForNonTerminals();
+    void findFirstForProductions();
+    void findFollow();
+    void findParsingTableLL1();
+
+    void printParsingTable();
+
 };
 
 
