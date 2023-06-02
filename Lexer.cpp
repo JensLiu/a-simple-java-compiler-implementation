@@ -7,7 +7,7 @@
 #include "Lexer.h"
 #include "InputBuffer.h"
 
-#define THROW_LEXICAL_ERROR(message) throw LexicalError(message, inputBuffer->getLine(), inputBuffer->getColumn())
+#define THROW_LEXICAL_ERROR(message) throw LexicalError(message, commitLexeme(), inputBuffer->getLine(), inputBuffer->getColumn())
 
 std::unordered_map<std::string, Token::TokenType> Lexer::KEYWORDS = {
         {"if",         Token::IF},
@@ -141,7 +141,6 @@ Token Lexer::nextToken() {
     } else {
         THROW_LEXICAL_ERROR("unexpected character");
     }
-
 }
 
 Token Lexer::handleDelimiter() {
@@ -205,7 +204,7 @@ Token Lexer::handleNumber() {
 
     // NOTE
     // we do not allow + or - to appear in our description of number
-    // because it cannot distinguish between a signed number and an arithmetic expression
+    // because it cannot distinguish between a signed number and an arithmetic parser_test_expression
 
     assert(isDigit(peek()));
     forward();

@@ -17,7 +17,7 @@ private:
     SymbolTable *symbolTable;
     Lexer *lexer;
 public:
-    Parser(const ContextFreeGrammar &grammar, Lexer *lexer, SymbolTable *symboltable);
+    Parser(const ContextFreeGrammar &grammar, Lexer *lexer, SymbolTable *symbolTable);
     void parse();
 };
 

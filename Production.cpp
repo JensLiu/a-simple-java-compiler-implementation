@@ -40,3 +40,7 @@ bool Production::isEpsilon() const {
 bool Production::isValid() const {
     return this->id != -1;
 }
+
+int Production::getId() const {
+    return this->id;
+}

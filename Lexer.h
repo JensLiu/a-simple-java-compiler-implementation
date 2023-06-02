@@ -56,10 +56,12 @@ private:
     int line;
     int column;
     std::string message;
+    std::string lexeme;
 public:
-    LexicalError(const std::string& error, int line, int column)
-        : std::runtime_error(error), line(line + 1), column(column + 1) {
-        this->message = error + " at line " + std::to_string(line + 1)  + " at column " + std::to_string(column + 1);
+    LexicalError(const std::string& error, const std::string &lexeme, int line, int column)
+        : std::runtime_error(error), lexeme(lexeme), line(line + 1), column(column + 1) {
+        this->message = error + " at line " + std::to_string(line + 1)  + " at column "
+                + std::to_string(column + 1) + ", lexeme: " + lexeme;
     }
     [[nodiscard]] const char * what () const noexcept override {
         return message.c_str();
