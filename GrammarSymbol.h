@@ -18,6 +18,7 @@ public:
     using SymbolType = enum {
         TERMINAL, NONTERMINAL, INVALID_SYMBOL
     };
+
 private:
     GrammarSymbol(const SymbolType &type, const std::string &nonTerminal, const Token::TokenType &terminal);
 

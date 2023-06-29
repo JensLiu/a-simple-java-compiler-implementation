@@ -120,7 +120,6 @@ char Lexer::currentChar() {
 // which means that the automata is before the start node: YOU_ARE_HERE -> StartState --(ch)--> NextState
 // when calling subroutines, the current character is consumed (we are moving to the next state)
 Token Lexer::nextToken() {
-
     char ch = peek();
     if (isLetter(ch) || ch == '_' || ch == '$') {
         return handleIdentifier();
@@ -190,11 +189,17 @@ Token Lexer::handleIdentifier() {
     while (isDigit(peek()) || isLetter(peek()) || peek() == '_' || peek() == '$') {
         forward();
     }
+
+    // accept
     std::string lexeme = commitLexeme();
+    // check if the lexeme falls into keywords
     if (KEYWORDS.find(lexeme) != KEYWORDS.end()) {
         return Token(KEYWORDS[lexeme]);
     }
-    return Token(Token::TokenType::IDENTIFIER, lexeme, inputBuffer->getLine(), inputBuffer->getColumn());
+    // add to symbol table and get an index
+    int index = symbolTable->addSymbol(lexeme);
+
+    return Token(Token::TokenType::IDENTIFIER, lexeme, index, inputBuffer->getLine(), inputBuffer->getColumn());
 }
 
 Token Lexer::handleNumber() {

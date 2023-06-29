@@ -28,13 +28,13 @@ Token::Token(const Token::TokenType &tokenType, const std::string &lexeme, int l
     this->column = column;
 }
 
-//Token::Token(const Token::TokenType &tokenType, const std::string &lexeme, int symbolTableIndex, int line, int column) {
-//    this->tokenType = tokenType;
-//    this->lexeme = lexeme;
-//    this->symbolTableIndex = symbolTableIndex;
-//    this->line = line;
-//    this->column = column;
-//}
+Token::Token(const Token::TokenType &tokenType, const std::string &lexeme, int symbolTableIndex, int line, int column) {
+    this->tokenType = tokenType;
+    this->lexeme = lexeme;
+    this->symbolTableIndex = symbolTableIndex;
+    this->line = line;
+    this->column = column;
+}
 
 Token::TokenType Token::getTokenType() const {
     return this->tokenType;
@@ -45,6 +45,10 @@ const std::string &Token::getLexeme() const {
 }
 
 std::ostream &operator<<(std::ostream &os, const Token &token) {
+    if (token.getTokenType() == Token::TokenType::IDENTIFIER) {
+        return os << "<" << token.getTokenType() << "(" << Token::tokenTypeAsString(token.getTokenType())
+                  << "), symbol_table[" << token.getSymbolTableIndex() << "] (lexeme: " << token.lexeme << ")>";
+    }
     return os << "<" << token.getTokenType() << "(" << Token::tokenTypeAsString(token.getTokenType()) << "), "
               << token.lexeme << ">";
 }
@@ -144,4 +148,8 @@ bool Token::isEOF() const {
 
 bool Token::isWhitespace() const {
     return this->tokenType == TokenType::WHITESPACE;
+}
+
+int Token::getSymbolTableIndex() const {
+    return this->symbolTableIndex;
 }

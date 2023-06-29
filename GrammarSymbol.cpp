@@ -90,5 +90,3 @@ GrammarSymbol::GrammarSymbol() {
     this->terminal = Token::TokenType::INVALID_TOKEN;
     this->nonTerminal = "";
 }
-
-

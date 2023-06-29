@@ -1,0 +1,30 @@
+package kernel.sysrecources.cpu;
+
+import kernel.process.SysProcess;
+import kernel.programme.Programme;
+
+public class CPU {
+    public static final int COMMREGS = 10;
+    public static final int FLAGREGS = 1;
+    private int __cpuid; // for multi core cpu
+    private SysProcess __curProc;
+
+    // registers
+    int __ip; // instruction pointer, lets pretend that each instruction has the same length
+              // and use the index of the instruction array (an array of strings) as __ip
+    int[] __commRegs = new int[COMMREGS]; // %r0 to %r10
+    int[] __flagRegs = new int[FLAGREGS]; // flag registers
+
+    /**
+     * CPU executes one instruction (ip is the virtual address
+     * @return
+     */
+    public boolean execOneInstruction() {
+        MachineInstruction instruction = __curProc.getInstructionAt(__ip);
+        if (instruction == null)
+            return false;
+        MachineInstructionExecutor.executeOneInstruction(this, instruction);
+        return true;
+    }
+
+}

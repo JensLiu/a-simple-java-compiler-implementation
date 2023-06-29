@@ -20,8 +20,10 @@ class SymbolTable {
 private:
     std::vector<SymbolTableEntry> table;
 public:
-    int add(const SymbolTableEntry &entry);
+    int addSymbol(const std::string &symbol);
+//    int add(const SymbolTableEntry &entry);
     SymbolTableEntry &get(const int &index);
+    std::string &getSymbol(const int &index);
 };
 
 #endif //COMPILER_SYMBOLTABLE_H
