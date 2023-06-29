@@ -10,6 +10,7 @@ extern std::vector<Production> grammarDefs;
 
 using std::cout;
 using std::endl;
+using std::string;
 
 void inputBufferTest();
 
@@ -18,9 +19,11 @@ void lexerTest();
 void grammarTest();
 
 void parserTest();
+void leftRecursionEliminationTest();
 
 int main() {
-    lexerTest();
+    leftRecursionEliminationTest();
+//    lexerTest();
 //    grammarTest();
 //    parserTest();
     return 0;
@@ -33,6 +36,24 @@ void parserTest() {
     Lexer lexer(&inputBuffer, &symbolTable);
     Parser parser(grammar, &lexer, &symbolTable);
     parser.parse();
+}
+
+void leftRecursionEliminationTest() {
+    ContextFreeGrammar grammar({
+        Production(HEAD("<expr>"), {NT("<expr>"), T(Token::PLUS), NT("<term>")}),
+        Production(HEAD("<expr>"), {NT("<expr>"), T(Token::MINUS), NT("<term>")}),
+        Production(HEAD("<expr>"), {NT("<term>")}),
+        Production(HEAD("<term>"), {NT("<term>"), T(Token::STAR), NT("<factor>")}),
+        Production(HEAD("<term>"), {NT("<term>"), T(Token::SLASH), NT("<factor>")}),
+        Production(HEAD("<term>"), {NT("<factor>")}),
+        Production(HEAD("<factor>"), {T(Token::LEFT_PAREN), NT("<expr>"), T(Token::RIGHT_PAREN)}),
+        Production(HEAD("<factor>"), {T(Token::INTEGER_LITERAL)}),
+    });
+    cout << "before elimination" << endl;
+    grammar.printProductions();
+    cout << endl << "after elimination" << endl;
+    grammar.eliminateDirectLeftRecursive();
+    grammar.printProductions();
 }
 
 void grammarTest() {

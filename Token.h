@@ -32,26 +32,47 @@ public:
     };
 
     static const std::unordered_map<TokenType, std::string> tokenName;
+
     static std::string tokenTypeAsString(const TokenType &tokenType);
 
 private:
     std::string lexeme;
     TokenType tokenType;
-    int symbolTableIndex;
+    union {
+        long integerValue;
+        double floatValue;
+        int symbolTableIndex;
+    } data;
+
     int line;
     int column;
 
+    // for numbers
+    Token(const TokenType &tokenType, const std::string &lexeme, long integerValue, int line, int column);
+    Token(const TokenType &tokenType, const std::string &lexeme, double floatValue, int line, int column);
+
 public:
     explicit Token(const TokenType &tokenType);     // this is used when token is treated as a terminal in grammar
-    Token(const TokenType &tokenType, const std::string &lexeme, int line, int column);     // for numbers
-    Token(const TokenType &tokenType, const std::string &lexeme, int symbolTableIndex, int line, int column);   // for identifiers
+    Token(const TokenType &tokenType, const std::string &lexeme, int line, int column);    // for string literals
+    Token(const TokenType &tokenType, const std::string &lexeme, int symbolTableIndex, int line,
+          int column);   // for identifiers
     Token(const TokenType &tokenType, int line, int column);    // others
+
+    static Token fromInteger(const std::string &lexeme, int line, int column);
+    static Token fromFloat(const std::string &lexeme, int line, int column);
+
     [[nodiscard]] TokenType getTokenType() const;
+
     [[nodiscard]] const std::string &getLexeme() const;
+
     [[nodiscard]] int getLine() const;
+
     [[nodiscard]] int getColumn() const;
+
     [[nodiscard]] int getSymbolTableIndex() const;
+
     [[nodiscard]] bool isEOF() const;
+
     [[nodiscard]] bool isWhitespace() const;
 
     friend std::ostream &operator<<(std::ostream &os, const Token &token);

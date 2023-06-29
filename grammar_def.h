@@ -31,7 +31,7 @@ std::vector<Production> grammarDefs =
                 Production(HEAD("<factor>"), {T(Token::FLOAT_LITERAL)}),
                 Production(HEAD("<factor>"), {T(Token::IDENTIFIER)}),
                 // -------------------------------------- statement grammar --------------------------------------------
-                Production(HEAD("<>"), {})
+
         };
 
 #endif //COMPILER_GRAMMAR_DEF_H

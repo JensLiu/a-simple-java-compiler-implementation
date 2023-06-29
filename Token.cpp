@@ -4,13 +4,13 @@
 
 #include "Token.h"
 #include <ostream>
+#include <iostream>
 
 Token::Token(const Token::TokenType &tokenType) {
     this->tokenType = tokenType;
     this->lexeme = "";
     this->line = -1;
     this->column = -1;
-//    this->symbolTableIndex = -1;
 }
 
 Token::Token(const Token::TokenType &tokenType, int line, int column) {
@@ -18,7 +18,6 @@ Token::Token(const Token::TokenType &tokenType, int line, int column) {
     this->lexeme = "";
     this->line = line;
     this->column = column;
-//    this->symbolTableIndex = -1;
 }
 
 Token::Token(const Token::TokenType &tokenType, const std::string &lexeme, int line, int column) {
@@ -28,10 +27,26 @@ Token::Token(const Token::TokenType &tokenType, const std::string &lexeme, int l
     this->column = column;
 }
 
+Token::Token(const Token::TokenType &tokenType, const std::string &lexeme, long integerValue, int line, int column) {
+    this->tokenType = tokenType;
+    this->lexeme = lexeme;
+    this->line = line;
+    this->column = column;
+    this->data.integerValue = integerValue;
+}
+
+Token::Token(const Token::TokenType &tokenType, const std::string &lexeme, double longValue, int line, int column) {
+    this->tokenType = tokenType;
+    this->lexeme = lexeme;
+    this->line = line;
+    this->column = column;
+    this->data.integerValue = longValue;
+}
+
 Token::Token(const Token::TokenType &tokenType, const std::string &lexeme, int symbolTableIndex, int line, int column) {
     this->tokenType = tokenType;
     this->lexeme = lexeme;
-    this->symbolTableIndex = symbolTableIndex;
+    this->data.symbolTableIndex = symbolTableIndex;
     this->line = line;
     this->column = column;
 }
@@ -42,15 +57,6 @@ Token::TokenType Token::getTokenType() const {
 
 const std::string &Token::getLexeme() const {
     return this->lexeme;
-}
-
-std::ostream &operator<<(std::ostream &os, const Token &token) {
-    if (token.getTokenType() == Token::TokenType::IDENTIFIER) {
-        return os << "<" << token.getTokenType() << "(" << Token::tokenTypeAsString(token.getTokenType())
-                  << "), symbol_table[" << token.getSymbolTableIndex() << "] (lexeme: " << token.lexeme << ")>";
-    }
-    return os << "<" << token.getTokenType() << "(" << Token::tokenTypeAsString(token.getTokenType()) << "), "
-              << token.lexeme << ">";
 }
 
 const std::unordered_map<Token::TokenType, std::string> Token::tokenName = {
@@ -70,6 +76,7 @@ const std::unordered_map<Token::TokenType, std::string> Token::tokenName = {
         {Token::TokenType::PROTECTED,             "protected"},
         {Token::TokenType::STATIC,                "static"},
         {Token::TokenType::PACKAGE,               "package"},
+        {Token::TokenType::FINAL,                 "final"},
         {Token::TokenType::INT,                   "int"},
         {Token::TokenType::FLOAT,                 "float"},
         {Token::TokenType::BOOL,                  "bool"},
@@ -126,8 +133,8 @@ const std::unordered_map<Token::TokenType, std::string> Token::tokenName = {
         {Token::TokenType::END_OF_FILE,           "EOF"},
         {Token::TokenType::ERROR,                 "ERROR"},
         {Token::TokenType::WHITESPACE,            "WHITESPACE"},
-        {Token::TokenType::NULL_T,                "null"},
-        {Token::TokenType::EPSILON,               "ϵ"}
+        {Token::TokenType::NULL_T,                "NULL"},
+        {Token::TokenType::EPSILON,               "EPSILON"}
 };
 
 std::string Token::tokenTypeAsString(const Token::TokenType &tokenType) {
@@ -151,5 +158,69 @@ bool Token::isWhitespace() const {
 }
 
 int Token::getSymbolTableIndex() const {
-    return this->symbolTableIndex;
+    return this->data.symbolTableIndex;
+}
+
+Token Token::fromInteger(const std::string &lexeme, int line, int column) {
+    char *pEnd = nullptr;
+    long val = strtol(lexeme.c_str(), &pEnd, 10);
+    if (pEnd != nullptr) {
+        return Token(TokenType::INTEGER_LITERAL, lexeme, val, line, column);
+    } else {
+        throw std::runtime_error("unable to parse lexeme to long");
+    }
+}
+
+Token Token::fromFloat(const std::string &lexeme, int line, int column) {
+    char *pEnd = nullptr;
+    double val = strtod(lexeme.c_str(), &pEnd);
+    if (pEnd != nullptr) {
+        return Token(TokenType::FLOAT_LITERAL, lexeme, val, line, column);
+    } else {
+        throw std::runtime_error("unable to parse lexeme to long");
+    }
+}
+
+std::string toBinaryRep(int value) {
+    uint32_t* ptr = reinterpret_cast<uint32_t*>(&value);
+    uint32_t intValue = *ptr;
+
+    std::string binaryString;
+    binaryString.reserve(32);
+
+    for (int i = 31; i >= 0; --i) {
+        binaryString.push_back((intValue >> i) & 1 ? '1' : '0');
+    }
+
+    return binaryString;
+}
+
+std::string toBinaryRep(double value) {
+    uint64_t* ptr = reinterpret_cast<uint64_t*>(&value);
+    uint64_t intValue = *ptr;
+
+    std::string binaryString;
+    binaryString.reserve(64);
+
+    for (int i = 63; i >= 0; --i) {
+        binaryString.push_back((intValue >> i) & 1 ? '1' : '0');
+    }
+
+    return binaryString;
+}
+
+std::ostream &operator<<(std::ostream &os, const Token &token) {
+    if (token.getTokenType() == Token::TokenType::IDENTIFIER) {
+        return os << "<" << token.getTokenType() << "(" << Token::tokenTypeAsString(token.getTokenType())
+                  << "), symbol_table[" << token.getSymbolTableIndex() << "] (lexeme: " << token.lexeme << ")>";
+    } else if (token.getTokenType() == Token::TokenType::INTEGER_LITERAL) {
+        return os << "<" << token.getTokenType() << "(" << Token::tokenTypeAsString(token.getTokenType())
+                  << "), lexeme: " << token.getLexeme() << ", binary: "
+                  <<  toBinaryRep((int)token.data.integerValue) << ">";
+    } else if (token.getTokenType() == Token::TokenType::FLOAT_LITERAL) {
+        return os << "<" << token.getTokenType() << "(" << Token::tokenTypeAsString(token.getTokenType())
+                  << "), lexeme: " << token.getLexeme() << ", binary: " << toBinaryRep((double)token.data.floatValue) << ">";
+    }
+    return os << "<" << token.getTokenType() << "(" << Token::tokenTypeAsString(token.getTokenType()) << "), "
+              << token.lexeme << ">";
 }

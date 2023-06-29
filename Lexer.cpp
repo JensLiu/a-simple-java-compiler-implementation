@@ -33,6 +33,7 @@ std::unordered_map<std::string, Token::TokenType> Lexer::KEYWORDS = {
         {"true",       Token::BOOL_LITERAL},
         {"false",      Token::BOOL_LITERAL},
         {"package",    Token::PACKAGE},
+        {"final",      Token::FINAL},
         {"null",       Token::NULL_T}
 };
 
@@ -228,10 +229,10 @@ Token Lexer::handleNumber() {
             forward();
             handleOptionalExponentSubroutine();
         }
-        return Token(Token::TokenType::FLOAT_LITERAL, commitLexeme(), inputBuffer->getLine(), inputBuffer->getColumn());
+        return Token::fromFloat(commitLexeme(), inputBuffer->getLine(), inputBuffer->getColumn());
     } else {
         // integer number
-        return Token(Token::TokenType::INTEGER_LITERAL, commitLexeme(), inputBuffer->getLine(), inputBuffer->getColumn());
+        return Token::fromInteger(commitLexeme(), inputBuffer->getLine(), inputBuffer->getColumn());
     }
 
 
