@@ -59,6 +59,66 @@ ContextFreeGrammar::ContextFreeGrammar(const std::vector<Production> &production
     }
 }
 
+
+void ContextFreeGrammar::eliminateDirectLeftRecursive() {
+    std::vector<Production> newProductions;
+
+    // split productions into direct left recursive and non left recursive
+    std::unordered_map<GrammarSymbol, std::vector<Production>> directLeftRecursiveProductions;
+    std::unordered_map<GrammarSymbol, std::vector<Production>> nonLeftRecursiveProductions;
+
+
+    // for each production, check if it is direct left recursive
+    // if so, put it into directLeftRecursiveProductions
+    // otherwise put it into nonLeftRecursiveProductions
+    for (const Production &p: productions) {
+        if (p.head == p.body[0]) {
+            directLeftRecursiveProductions[p.head].push_back(p);
+        } else {
+            nonLeftRecursiveProductions[p.head].push_back(p);
+        }
+    }
+
+    // for every recorded non-left-recursive production
+    // check if its head has a production that is left recursive
+    for (auto it: nonLeftRecursiveProductions) {
+        GrammarSymbol s = it.first;
+        // if it doesn't have a left recursive production, just copy it
+        if (directLeftRecursiveProductions.count(s) == 0) {
+            newProductions.insert(newProductions.end(), it.second.begin(), it.second.end());
+        }
+    }
+
+    // for every symbol that has a left recursive production
+    for (auto it: directLeftRecursiveProductions) {
+        // create a new non-terminal A'
+        GrammarSymbol A_ = GrammarSymbol::createNonTerminal(it.first.getNonTerminal() + "'");
+
+        // for every left-recursive production A ::= A u
+        // add a new production A ::= u A'
+        for (const Production &p: it.second) {
+            std::vector<GrammarSymbol> newBody = p.body;
+            newBody.erase(newBody.begin());
+            newBody.push_back(it.first);
+            newProductions.emplace_back(A_, newBody);
+        }
+
+        // for every non-left-recursive production A ::= u
+        // add a new production A' ::= u
+        for (const Production &p: nonLeftRecursiveProductions[it.first]) {
+            std::vector<GrammarSymbol> newBody = p.body;
+            newBody.push_back(A_);
+            newProductions.emplace_back(it.first, newBody);
+        }
+        newProductions.push_back(Production(A_, {GrammarSymbol::epsilon()}));
+    }
+
+    productions = newProductions;
+}
+
+/**
+ * this function finds the FIRST set for each non-terminals
+ */
 void ContextFreeGrammar::findFirstForNonTerminals() {
     if (this->status >= FIRST_COMPUTED) return;
     INSTALL_CHANGE_DETECTOR(unsigned)
@@ -67,13 +127,29 @@ void ContextFreeGrammar::findFirstForNonTerminals() {
             for (const Production &p: productions) {
                 const GrammarSymbol &firstSymbol = p.body[0];
                 DETECT_CHANGE_BEGIN(FIRST[p.head].size())
+
+                    // handle the first symbol in the body
+                    // if the production is of the form A ::= aX, then (non-terminal) 'a' is an element of FIRST[A]
                     if (firstSymbol.isTerminal()) FIRST[p.head].insert(firstSymbol);
+                        // if the production is of the form A ::= BX, then FIRST[B] is a subset of FIRST[A]
                     else FIRST[p.head].insert(FIRST[firstSymbol].begin(), FIRST[firstSymbol].end());
+
+                    // now scan starting from the second symbol in the body
                     for (int i = 1; i <= p.body.size(); i++) {
+                        // if A ::= B1 B2 B3... Bn
+                        // while B1 ... Bk-1 has the role Bi ::= epsilon (nullable)
+                        // FIRST[Bk] is a subset of FIRST[A]
+
                         const GrammarSymbol &prevSymbol = p.body[i - 1];
+
+                        // while the previous symbol is a non-terminal and contains epsilon, continue
                         if (prevSymbol.isTerminal() || FIRST[prevSymbol].count(GrammarSymbol::epsilon()) == 0) {
+                            // otherwise stop since
+                            // 1. terminals: A => * u <terminal> B X preventing us from deriving A => * B X
+                            // 2. non-nullable non-terminal: A => * u <non-nullable> v B X preventing us from deriving A => * B X
                             break;
                         }
+
                         // The previous symbol is non-terminal and the empty string belongs to its FIRST set
                         // by induction: all FIRST sets of previous symbols contains the empty string
                         FIRST[p.head].insert(FIRST[prevSymbol].begin(), FIRST[prevSymbol].end());
@@ -85,14 +161,24 @@ void ContextFreeGrammar::findFirstForNonTerminals() {
     if (this->status < FIRST_COMPUTED) this->status = FIRST_COMPUTED;
 }
 
+/**
+ * this function finds the FIRST set for each productions
+ * FIRST[A ::= X] is a subset of FIRST[A]
+ */
 void ContextFreeGrammar::findFirstForProductions() {
     if (this->status >= FIRST_P_COMPUTED) return;
     if (this->status < FIRST_COMPUTED) findFirstForNonTerminals();
 
     for (const Production &p: productions) {
+        // get the first symbol in the body
         const GrammarSymbol &firstSymbol = p.body[0];
+
+        // if the first symbol is a terminal, FIRST[A ::= aX] = {a}
         if (firstSymbol.isTerminal()) FIRST_P[p].insert(firstSymbol);
+            // if the first symbol is a non-terminal, FIRST[A ::= BX] is the superset of FIRST[B]
         else FIRST_P[p].insert(FIRST[firstSymbol].begin(), FIRST[firstSymbol].end());
+
+        // exam the following symbols in X (in the production A ::= BX)
         for (int i = 1; i <= p.body.size(); i++) {
             // FIRST sets of non-terminals are already computed therefore one scan for each production suffices
             const GrammarSymbol &prevSymbol = p.body[i - 1];
@@ -158,7 +244,7 @@ void ContextFreeGrammar::findParsingTableLL1() {
         // find all productions of this symbol
 
         parsing_table_entry_t entryForS;
-        for (const Production& p : productions) {
+        for (const Production &p: productions) {
             if (p.head != s) continue;
             // for each production with head s
 
@@ -180,7 +266,8 @@ void ContextFreeGrammar::findParsingTableLL1() {
             }
         }
 
-        PARSING_TABLE.insert({s, entryForS});   // set entry to the corresponding head: PARSING_TABLE[non-terminal] = entry
+        PARSING_TABLE.insert(
+                {s, entryForS});   // set entry to the corresponding head: PARSING_TABLE[non-terminal] = entry
     }
     if (this->status < PARSING_TABLE_COMPUTED) this->status = PARSING_TABLE_COMPUTED;
 }
@@ -195,7 +282,7 @@ void ContextFreeGrammar::printParsingTable() {
             if (it == PARSING_TABLE[nt].end()) {
                 std::cout << "\ton " << t << "\terror" << std::endl;
             } else {
-                std::cout << "\ton "  << t << "\tuse " << it->second << std::endl;
+                std::cout << "\ton " << t << "\tuse " << it->second << std::endl;
             }
         }
         std::cout << std::endl;
@@ -251,7 +338,7 @@ ContextFreeGrammar::predict(const GrammarSymbol &current, const GrammarSymbol &o
 }
 
 void ContextFreeGrammar::printProductions() {
-    for (const Production &p : productions) {
+    for (const Production &p: productions) {
         std::cout << p << std::endl;
     }
 }

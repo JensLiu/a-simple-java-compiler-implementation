@@ -42,6 +42,7 @@ private:
 
 public:
     explicit ContextFreeGrammar(const std::vector<Production> &productions);
+    void eliminateDirectLeftRecursive();
     void findFirstForNonTerminals();
     void findFirstForProductions();
     void findFollow();
