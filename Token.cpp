@@ -5,6 +5,7 @@
 #include "Token.h"
 #include <ostream>
 #include <iostream>
+#include <fstream>
 
 Token::Token(const Token::TokenType &tokenType) {
     this->tokenType = tokenType;
@@ -76,6 +77,7 @@ const std::unordered_map<Token::TokenType, std::string> Token::tokenName = {
         {Token::TokenType::PROTECTED,             "protected"},
         {Token::TokenType::STATIC,                "static"},
         {Token::TokenType::PACKAGE,               "package"},
+        {Token::TokenType::IMPORT,                "import"},
         {Token::TokenType::FINAL,                 "final"},
         {Token::TokenType::INT,                   "int"},
         {Token::TokenType::FLOAT,                 "float"},
@@ -99,7 +101,7 @@ const std::unordered_map<Token::TokenType, std::string> Token::tokenName = {
         {Token::TokenType::AMPERSAND,             "&"},
         {Token::TokenType::PIPE,                  "|"},
         {Token::TokenType::EQUALS,                "="},
-        {Token::TokenType::NOT_EQUALS,            "!="},
+        {Token::TokenType::NOT_EQUAL,             "!="},
         {Token::TokenType::LESS_THAN,             "<"},
         {Token::TokenType::GREATER_THAN,          ">"},
         {Token::TokenType::LESS_THAN_OR_EQUAL,    "<="},
@@ -116,7 +118,6 @@ const std::unordered_map<Token::TokenType, std::string> Token::tokenName = {
         {Token::TokenType::SLASH_ASSIGNMENT,      "/="},
         {Token::TokenType::PERCENT_ASSIGNMENT,    "%="},
         {Token::TokenType::CARET_ASSIGNMENT,      "^="},
-//        {Token::TokenType::TILDE_ASSIGNMENT, "TILDE_ASSIGNMENT"},
         {Token::TokenType::AMPERSAND_ASSIGNMENT,  "&="},
         {Token::TokenType::PIPE_ASSIGNMENT,       "|="},
         {Token::TokenType::LEFT_PAREN,            "("},
@@ -128,8 +129,6 @@ const std::unordered_map<Token::TokenType, std::string> Token::tokenName = {
         {Token::TokenType::SEMICOLON,             ";"},
         {Token::TokenType::COMMA,                 ","},
         {Token::TokenType::DOT,                   "."},
-//        {Token::TokenType::COLON, "COLON"},
-//        {Token::TokenType::QUESTION_MARK, "QUESTION_MARK"},
         {Token::TokenType::END_OF_FILE,           "EOF"},
         {Token::TokenType::ERROR,                 "ERROR"},
         {Token::TokenType::WHITESPACE,            "WHITESPACE"},
@@ -223,4 +222,13 @@ std::ostream &operator<<(std::ostream &os, const Token &token) {
     }
     return os << "<" << token.getTokenType() << "(" << Token::tokenTypeAsString(token.getTokenType()) << "), "
               << token.lexeme << ">";
+}
+
+void Token::exportTokenTypeToCSV(const std::string &filename) {
+    std::ofstream fout;
+    fout.open(filename, std::ios::out | std::ios::trunc);
+    for (int i = 0; i < (int)TokenType::INVALID_TOKEN; i++) {
+        fout << i << "," <<  tokenName.at((TokenType)i) << std::endl;
+    }
+    fout.close();
 }

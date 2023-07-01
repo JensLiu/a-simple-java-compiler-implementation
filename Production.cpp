@@ -10,7 +10,7 @@ int Production::nextId = 0;
 std::ostream &operator<<(std::ostream &os, const Production &production) {
     os << production.head << " ::= ";
     for (const GrammarSymbol &symbol: production.body) {
-        os << symbol;
+        os << symbol << " ";
     }
     return os;
 }
@@ -28,9 +28,21 @@ Production::Production(int id, const GrammarSymbol &head, const std::vector<Gram
 
 bool Production::operator==(const Production &other) const {
     return this->id == other.id;
+//    if (this->head != other.head) {
+//        return false;
+//    }
+//    if (this->body.size() != other.body.size()) {
+//        return false;
+//    }
+//    for (int i = 0; i < this->body.size(); i++) {
+//        if (this->body[i] != other.body[i]) {
+//            return false;
+//        }
+//    }
+//    return true;
 }
 
-bool Production::isEpsilon() const {
+bool Production::isEpsilonProduction() const {
     if (this->body.size() > 1) {
         return false;
     }

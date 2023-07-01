@@ -29,6 +29,7 @@ public:
     using parsing_table_t = std::unordered_map<GrammarSymbol, parsing_table_entry_t>;
 
 private:
+    GrammarSymbol startSymbol;
     std::unordered_set<GrammarSymbol> nonTermimals;
     std::unordered_set<GrammarSymbol> terminals;
     std::vector<Production> productions;
@@ -42,7 +43,7 @@ private:
 
 public:
     explicit ContextFreeGrammar(const std::vector<Production> &productions);
-    void eliminateDirectLeftRecursive();
+    ContextFreeGrammar &eliminateDirectLeftRecursive();
     void findFirstForNonTerminals();
     void findFirstForProductions();
     void findFollow();
@@ -55,6 +56,8 @@ public:
 
     GrammarSymbol &getStartSymbol();
     std::variant<Production, ErrorStrategy> predict(const GrammarSymbol &current, const GrammarSymbol &onInput);
+
+    void exportParsingTableAsCsv(const std::string &filename);
 };
 
 #endif //COMPILER_CONTEXTFREEGRAMMAR_H

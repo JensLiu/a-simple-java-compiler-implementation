@@ -14,12 +14,12 @@ void Parser::parse() {
     stack.push_back(grammar.getStartSymbol());
     while (!stack.empty()) {
         const Token &token = lexer->nextToken();
-        std::cout << "Token: " << token << std::endl;
+        std::cout << "got token: " << token << std::endl;
 
         if (token.isWhitespace()) continue; // ignoring whitespaces such as space, tab, newline
         while (true) {
             const GrammarSymbol &node = stack.back();
-//            PRINT_STACK(stack)
+            PRINT_STACK(stack)
             // create symbol using the current token in order to use prediction
             GrammarSymbol inputSymbol = GrammarSymbol::createTerminal(token.getTokenType());
 
@@ -31,6 +31,7 @@ void Parser::parse() {
             }
 
             // use parsing table to predict the next production
+            std::cout << "\tpredict " << node << ", " << inputSymbol << std::endl;
             std::variant<Production, ErrorStrategy> result = grammar.predict(node, inputSymbol);
 
 
@@ -52,6 +53,7 @@ void Parser::parse() {
 
         }
     }
+    std::cout << "accept" << std::endl;
 }
 
 Parser::Parser(const ContextFreeGrammar &grammar, Lexer *lexer, SymbolTable *symbolTable)

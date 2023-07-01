@@ -6,6 +6,7 @@
 #include <iostream>
 #include <algorithm>
 #include <iomanip>
+#include <fstream>
 #include "ContextFreeGrammar.h"
 
 // -------------------- CHANGE DETECTOR DEF START --------------------
@@ -48,10 +49,14 @@ if (my_detector_prev_val != my_detector_current_val) { \
 
 ContextFreeGrammar::ContextFreeGrammar(const std::vector<Production> &productions)
         : productions(productions) {
+    if (productions.empty()) {
+        throw std::runtime_error("productions cannot be empty");
+    }
+    this->startSymbol = productions[0].head;
     for (const Production &p: productions) {
         this->nonTermimals.insert(p.head);
         for (const GrammarSymbol &s: p.body) {
-            if (s.isTerminal()) {
+            if (s.isTerminal() && !s.isEpsilon()) {
                 this->terminals.insert(s);
             }
         }
@@ -59,8 +64,8 @@ ContextFreeGrammar::ContextFreeGrammar(const std::vector<Production> &production
     }
 }
 
+ContextFreeGrammar &ContextFreeGrammar::eliminateDirectLeftRecursive() {
 
-void ContextFreeGrammar::eliminateDirectLeftRecursive() {
     std::vector<Production> newProductions;
 
     // split productions into direct left recursive and non left recursive
@@ -93,13 +98,14 @@ void ContextFreeGrammar::eliminateDirectLeftRecursive() {
     for (auto it: directLeftRecursiveProductions) {
         // create a new non-terminal A'
         GrammarSymbol A_ = GrammarSymbol::createNonTerminal(it.first.getNonTerminal() + "'");
+        this->nonTermimals.insert(A_);
 
         // for every left-recursive production A ::= A u
         // add a new production A ::= u A'
         for (const Production &p: it.second) {
             std::vector<GrammarSymbol> newBody = p.body;
             newBody.erase(newBody.begin());
-            newBody.push_back(it.first);
+            newBody.push_back(A_);
             newProductions.emplace_back(A_, newBody);
         }
 
@@ -112,8 +118,9 @@ void ContextFreeGrammar::eliminateDirectLeftRecursive() {
         }
         newProductions.push_back(Production(A_, {GrammarSymbol::epsilon()}));
     }
-
-    productions = newProductions;
+    this->productions = newProductions;
+    this->status = INITIAL;
+    return *this;
 }
 
 /**
@@ -170,24 +177,32 @@ void ContextFreeGrammar::findFirstForProductions() {
     if (this->status < FIRST_COMPUTED) findFirstForNonTerminals();
 
     for (const Production &p: productions) {
+
         // get the first symbol in the body
         const GrammarSymbol &firstSymbol = p.body[0];
 
-        // if the first symbol is a terminal, FIRST[A ::= aX] = {a}
-        if (firstSymbol.isTerminal()) FIRST_P[p].insert(firstSymbol);
-            // if the first symbol is a non-terminal, FIRST[A ::= BX] is the superset of FIRST[B]
-        else FIRST_P[p].insert(FIRST[firstSymbol].begin(), FIRST[firstSymbol].end());
+        if (firstSymbol.isTerminal()) {
+            // if the first symbol is a terminal, FIRST[A ::= aX] = {a}
+            FIRST_P[p].insert(firstSymbol);
+            continue;
+        }
 
-        // exam the following symbols in X (in the production A ::= BX)
+        // if the first symbol is a non-terminal, FIRST[A ::= B beta] is the superset of FIRST[B]
+        FIRST_P[p].insert(FIRST[firstSymbol].begin(), FIRST[firstSymbol].end());
+
+        // exam the following symbols in beta (in the production A ::= B beta)
         for (int i = 1; i <= p.body.size(); i++) {
             // FIRST sets of non-terminals are already computed therefore one scan for each production suffices
+
             const GrammarSymbol &prevSymbol = p.body[i - 1];
-            if (prevSymbol.isTerminal() ||
-                FIRST[prevSymbol].count(GrammarSymbol::epsilon()) == 0) {
+            if (prevSymbol.isTerminal() || FIRST[prevSymbol].count(GrammarSymbol::epsilon()) != 0) {
+                // X is terminal or there does not exist X * => epsilon
                 break;
             }
+
             // The previous symbol is non-terminal and the empty string belongs to its FIRST set
             FIRST_P[p].insert(FIRST[prevSymbol].begin(), FIRST[prevSymbol].end());
+
         }
     }
 
@@ -199,7 +214,7 @@ void ContextFreeGrammar::findFollow() {
     if (this->status < FIRST_P_COMPUTED) findFirstForProductions();
 
     // the endmarker eof belongs to FIRST[start]
-    FOLLOW[productions[0].head].insert(GrammarSymbol::eof());
+    FOLLOW[getStartSymbol()].insert(GrammarSymbol::eof());
     INSTALL_CHANGE_DETECTOR(unsigned)
         while (CHANGE_DETECTOR_LOOP_CONDITION) {    // repeat until no set grows in size
             RESET_CHANGE_DETECTOR
@@ -250,11 +265,11 @@ void ContextFreeGrammar::findParsingTableLL1() {
 
             // NOTE: Had there been any collision when
             // (1) epsilon is in FIRST[s] and
-            // (2) FIRST[s] intersection FOLLOW[s] is not empty,
+            // (2) FIRST[s] intersect FOLLOW[s] is not empty,
             // place the production of preference as the first occurrence of its kind
-            // so that it can override the previous effect (since latter cannot be inserted again into the set)
+            // so that it can override the latter (since latter cannot be inserted again into the set)
 
-            if (p.isEpsilon()) {
+            if (p.isEpsilonProduction()) {
                 // for productions such as A ::= epsilon, we add it to columns with respect to their FOLLOW set
                 for (const GrammarSymbol &nt: FOLLOW[s]) {
                     entryForS.insert({nt, p});
@@ -287,6 +302,37 @@ void ContextFreeGrammar::printParsingTable() {
         }
         std::cout << std::endl;
     }
+}
+
+void ContextFreeGrammar::exportParsingTableAsCsv(const std::string &filename) {
+    // export the parsing table as a csv file
+    if (this->status < PARSING_TABLE_COMPUTED) findParsingTableLL1();
+    std::ofstream fout;
+    fout.open(filename, std::ios::out | std::ios::trunc);
+    if (!fout.is_open()) {
+        std::cerr << "Error: cannot open file " << filename << std::endl;
+        return;
+    }
+
+    fout << ",";
+    for (const GrammarSymbol &t: terminals) {
+        fout << t << ",";
+    }
+    fout << std::endl;
+
+    for (const GrammarSymbol &nt: nonTermimals) {
+        fout << nt << ",";
+        for (const GrammarSymbol &t: terminals) {
+            auto it = PARSING_TABLE[nt].find(t);
+            if (it == PARSING_TABLE[nt].end()) {
+                fout << ",";
+            } else {
+                fout << it->second << ",";
+            }
+        }
+        fout << std::endl;
+    }
+    fout.close();
 }
 
 void ContextFreeGrammar::printFirstSetForNonTerminals() {
@@ -323,7 +369,7 @@ void ContextFreeGrammar::printFollowSet() {
 }
 
 GrammarSymbol &ContextFreeGrammar::getStartSymbol() {
-    return productions[0].head;
+    return startSymbol;
 }
 
 std::variant<Production, ErrorStrategy>
@@ -338,6 +384,7 @@ ContextFreeGrammar::predict(const GrammarSymbol &current, const GrammarSymbol &o
 }
 
 void ContextFreeGrammar::printProductions() {
+    std::cout << "Start symbol: " << startSymbol << std::endl;
     for (const Production &p: productions) {
         std::cout << p << std::endl;
     }

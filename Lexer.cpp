@@ -235,7 +235,6 @@ Token Lexer::handleNumber() {
         return Token::fromInteger(commitLexeme(), inputBuffer->getLine(), inputBuffer->getColumn());
     }
 
-
 }
 
 void Lexer::handleOptionalFractionSubroutine() {
@@ -475,7 +474,7 @@ Token Lexer::handleOperator() {
         if (peek() == '=') {
             forward();
             commitLexeme();
-            return Token(Token::TokenType::NOT_EQUALS, inputBuffer->getLine(), inputBuffer->getColumn());
+            return Token(Token::TokenType::NOT_EQUAL, inputBuffer->getLine(), inputBuffer->getColumn());
         } else {
             commitLexeme();
             return Token(Token::TokenType::LOGICAL_NOT, inputBuffer->getLine(), inputBuffer->getColumn());
@@ -512,10 +511,12 @@ Token Lexer::handleOperator() {
             return Token(Token::TokenType::CARET, inputBuffer->getLine(), inputBuffer->getColumn());
         }
     } else if (ch == '~') {
+        forward();
         commitLexeme();
         return Token(Token::TokenType::TILDE, inputBuffer->getLine(), inputBuffer->getColumn());
     } else if (ch == '%') {
         if (peek() == '=') {
+            forward();
             commitLexeme();
             return Token(Token::TokenType::PERCENT_ASSIGNMENT, inputBuffer->getLine(), inputBuffer->getColumn());
         } else {

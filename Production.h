@@ -20,7 +20,7 @@ public:
     Production(const GrammarSymbol &head, const std::vector<GrammarSymbol> &body);
     Production(int id, const GrammarSymbol &head, const std::vector<GrammarSymbol> &body);
     [[nodiscard]] int getId() const;
-    [[nodiscard]] bool isEpsilon() const;
+    [[nodiscard]] bool isEpsilonProduction() const;
     [[nodiscard]] bool isValid() const;
     bool operator==(const Production &other) const;
     friend std::ostream &operator<<(std::ostream &os, const Production &production);
@@ -30,6 +30,11 @@ template<>
 struct std::hash<Production> {
     std::size_t operator()(const Production &p) const noexcept {
         return std::hash<int>{}(p.getId());
+//        size_t hashValue = hash<GrammarSymbol>{}(p.head);
+//            for (const auto& symbol : p.body) {
+//                hashValue ^= hash<GrammarSymbol>{}(symbol);
+//            }
+//            return hashValue;
     }
 };
 
