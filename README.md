@@ -8,7 +8,7 @@ The lexical analyser is implemented by hand, using conditions and loops. The sta
 
  
 
-![Untitled-2023-05-20-1600.png](Documentation%readme/automata.png)
+![Untitled-2023-05-20-1600.png](readme/automata.png)
 
 ## Input Buffer
 
