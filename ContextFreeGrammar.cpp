@@ -8,6 +8,7 @@
 #include <iomanip>
 #include <fstream>
 #include "ContextFreeGrammar.h"
+#include "logger.h"
 
 // -------------------- CHANGE DETECTOR DEF START --------------------
 // It can detect multiple changes in a single loop and is used to detect changes in the FIRST and FOLLOW sets.
@@ -131,27 +132,40 @@ void ContextFreeGrammar::findFirstForNonTerminals() {
     INSTALL_CHANGE_DETECTOR(unsigned)
         while (CHANGE_DETECTOR_LOOP_CONDITION) {    // repeat until no set grows in size
             RESET_CHANGE_DETECTOR
+
             for (const Production &p: productions) {
                 const GrammarSymbol &firstSymbol = p.body[0];
                 DETECT_CHANGE_BEGIN(FIRST[p.head].size())
 
                     // handle the first symbol in the body
                     // if the production is of the form A ::= aX, then (non-terminal) 'a' is an element of FIRST[A]
-                    if (firstSymbol.isTerminal()) FIRST[p.head].insert(firstSymbol);
+                    if (firstSymbol.isTerminal()) {
+                        FIRST[p.head].insert(firstSymbol);
+                    } else {
                         // if the production is of the form A ::= BX, then FIRST[B] is a subset of FIRST[A]
-                    else FIRST[p.head].insert(FIRST[firstSymbol].begin(), FIRST[firstSymbol].end());
+                        for (const GrammarSymbol &s: FIRST[firstSymbol]) {
+                            if (!s.isEpsilon()) {
+                                // NOTE: epsilon is not an element of FIRST[A]
+                                FIRST[p.head].insert(s);
+                            }
+                        }
+                    }
+
 
                     // now scan starting from the second symbol in the body
-                    for (int i = 1; i <= p.body.size(); i++) {
+                    int i;
+                    for (i = 1; i < p.body.size(); i++) {
                         // if A ::= B1 B2 B3... Bn
                         // while B1 ... Bk-1 has the role Bi ::= epsilon (nullable)
                         // FIRST[Bk] is a subset of FIRST[A]
 
                         const GrammarSymbol &prevSymbol = p.body[i - 1];
+                        const GrammarSymbol &currentSymbol = p.body[i];
 
                         // while the previous symbol is a non-terminal and contains epsilon, continue
                         if (prevSymbol.isTerminal() || FIRST[prevSymbol].count(GrammarSymbol::epsilon()) == 0) {
-                            // otherwise stop since
+                            // previous symbol is terminal or does not contain epsilon
+                            // stop since
                             // 1. terminals: A => * u <terminal> B X preventing us from deriving A => * B X
                             // 2. non-nullable non-terminal: A => * u <non-nullable> v B X preventing us from deriving A => * B X
                             break;
@@ -159,8 +173,22 @@ void ContextFreeGrammar::findFirstForNonTerminals() {
 
                         // The previous symbol is non-terminal and the empty string belongs to its FIRST set
                         // by induction: all FIRST sets of previous symbols contains the empty string
-                        FIRST[p.head].insert(FIRST[prevSymbol].begin(), FIRST[prevSymbol].end());
+                        if (currentSymbol.isTerminal()) {
+                            FIRST[p.head].insert(currentSymbol);
+                        } else {
+                            for (const GrammarSymbol &s: FIRST[currentSymbol]) {
+                                if (!s.isEpsilon()) {
+                                    // NOTE: epsilon is not an element of FIRST[A]
+                                    FIRST[p.head].insert(s);
+                                }
+                            }
+                        }
                     }
+
+                    if (i == p.body.size()) {   // if all symbols in the body are nullable
+                        FIRST[p.head].insert(GrammarSymbol::epsilon());
+                    }
+
                 DETECT_CHANGE_END(FIRST[p.head].size())
             }
         }
@@ -188,21 +216,37 @@ void ContextFreeGrammar::findFirstForProductions() {
         }
 
         // if the first symbol is a non-terminal, FIRST[A ::= B beta] is the superset of FIRST[B]
-        FIRST_P[p].insert(FIRST[firstSymbol].begin(), FIRST[firstSymbol].end());
+        for (const GrammarSymbol &s: FIRST[firstSymbol]) {
+            if (!s.isEpsilon()) {
+                FIRST_P[p].insert(s);
+            }
+        }
 
         // exam the following symbols in beta (in the production A ::= B beta)
-        for (int i = 1; i <= p.body.size(); i++) {
+        int i;
+        for (i = 1; i < p.body.size(); i++) {
             // FIRST sets of non-terminals are already computed therefore one scan for each production suffices
-
             const GrammarSymbol &prevSymbol = p.body[i - 1];
-            if (prevSymbol.isTerminal() || FIRST[prevSymbol].count(GrammarSymbol::epsilon()) != 0) {
+            const GrammarSymbol &currentSymbol = p.body[i];
+
+            if (prevSymbol.isTerminal() || FIRST[prevSymbol].count(GrammarSymbol::epsilon()) == 0) {
                 // X is terminal or there does not exist X * => epsilon
                 break;
             }
 
             // The previous symbol is non-terminal and the empty string belongs to its FIRST set
-            FIRST_P[p].insert(FIRST[prevSymbol].begin(), FIRST[prevSymbol].end());
-
+            if (currentSymbol.isTerminal()) {
+                FIRST_P[p].insert(currentSymbol);
+            } else {
+                for (const GrammarSymbol &s: FIRST[currentSymbol]) {
+                    if (!s.isEpsilon()) {
+                        FIRST_P[p].insert(s);
+                    }
+                }
+            }
+        }
+        if (i == p.body.size()) {   // if all symbols in the body are nullable
+            FIRST_P[p].insert(GrammarSymbol::epsilon());
         }
     }
 
@@ -218,10 +262,13 @@ void ContextFreeGrammar::findFollow() {
     INSTALL_CHANGE_DETECTOR(unsigned)
         while (CHANGE_DETECTOR_LOOP_CONDITION) {    // repeat until no set grows in size
             RESET_CHANGE_DETECTOR
+
             for (const Production &p: productions) {
+
                 bool nullableSuffix = true;     // the last symbol in the body always has a nullable suffix
                 for (int i = p.body.size() - 1; i >= 0; i--) {  // backward scan of the body
                     const GrammarSymbol &current = p.body[i];
+
                     if (nullableSuffix && !current.isTerminal()) {
                         // if the current symbol has a nullable suffix, FOLLOW[head] is a subset of FOLLOW[current]
                         DETECT_CHANGE_BEGIN(FOLLOW[current].size())
@@ -230,20 +277,26 @@ void ContextFreeGrammar::findFollow() {
                             FOLLOW[current].erase(GrammarSymbol::epsilon());
                         DETECT_CHANGE_END(FOLLOW[current].size())
                     }
+
                     if (i - 1 >= 0 && !p.body[i - 1].isTerminal()) {
                         // if the symbol right to the current symbol exists and is non-terminal,
                         // FIRST[current] is a subset of FOLLOW[current - 1]
                         DETECT_CHANGE_BEGIN(FOLLOW[p.body[i - 1]].size())
-                            if (current.isTerminal()) FOLLOW[p.body[i - 1]].insert(current);
-                            else FOLLOW[p.body[i - 1]].insert(FIRST[current].begin(), FIRST[current].end());
+                            if (current.isTerminal()) {
+                                FOLLOW[p.body[i - 1]].insert(current);
+                            } else {
+                                FOLLOW[p.body[i - 1]].insert(FIRST[current].begin(), FIRST[current].end());
+                            }
                             FOLLOW[p.body[i - 1]].erase(GrammarSymbol::epsilon());
                         DETECT_CHANGE_END(FOLLOW[p.body[i - 1]].size())
                     }
+
                     // update if the suffix containing current symbol is nullable
                     if (current.isTerminal() || FIRST[current].count(GrammarSymbol::epsilon()) == 0) {
                         nullableSuffix = false;
                     }
                 }
+
             }
         }
     UNINSTALL_CHANGE_DETECTOR
@@ -257,7 +310,6 @@ void ContextFreeGrammar::findParsingTableLL1() {
 
     for (const GrammarSymbol &s: nonTermimals) {
         // find all productions of this symbol
-
         parsing_table_entry_t entryForS;
         for (const Production &p: productions) {
             if (p.head != s) continue;
@@ -375,8 +427,8 @@ GrammarSymbol &ContextFreeGrammar::getStartSymbol() {
 std::variant<Production, ErrorStrategy>
 ContextFreeGrammar::predict(const GrammarSymbol &current, const GrammarSymbol &onInput) {
     if (this->status < PARSING_TABLE_COMPUTED) findParsingTableLL1();
-
     const Production &p = PARSING_TABLE[current][onInput];
+
     if (!p.isValid()) {
         return ErrorStrategy("error, do nothing");
     }
