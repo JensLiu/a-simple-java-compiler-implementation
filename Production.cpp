@@ -19,12 +19,20 @@ Production::Production() : head(GrammarSymbol::invalid()), id(-1) {}
 
 Production::Production(const GrammarSymbol &head, const std::vector<GrammarSymbol> &body)
         : head(head), body(body) {
+    if (this->body.size() == 0) {
+        this->body.push_back(GrammarSymbol::epsilon());
+    }
     this->id = nextId;
     nextId++;
 }
 
 Production::Production(int id, const GrammarSymbol &head, const std::vector<GrammarSymbol> &body)
-        : id(id), head(head), body(body) { nextId = id + 1; }
+        : id(id), head(head), body(body) {
+    if (this->body.size() == 0) {
+        this->body.push_back(GrammarSymbol::epsilon());
+    }
+    nextId = id + 1;
+}
 
 bool Production::operator==(const Production &other) const {
     return this->id == other.id;

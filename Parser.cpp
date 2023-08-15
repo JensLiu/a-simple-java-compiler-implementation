@@ -27,19 +27,18 @@ void Parser::parse() {
                 stack.pop_back();
                 break;
             } else if (node.isTerminal() && !node.isEpsilon()) {
-                throw SyntacticalError("error", token.getLine(), token.getColumn());
+                throw SyntacticalError("error: expected " + node.toString() + "got" + inputSymbol.toString() , token.getLine(), token.getColumn());
             }
 
             // use parsing table to predict the next production
-            std::cout << "\tpredict " << node << ", " << inputSymbol << std::endl;
+            std::cout << "\t\tpredict: " << node << " on " << inputSymbol << std::endl;
             std::variant<Production, ErrorStrategy> result = grammar.predict(node, inputSymbol);
-
 
             if (std::holds_alternative<Production>(result)) {
                 // use the predicted production to preceded
                 const Production &p = std::get<Production>(result);
                 stack.pop_back();
-                std::cout << "\texpand using: " << p << std::endl;
+                std::cout << "\t\texpand using: " << p << std::endl;
                 for (int i = p.body.size() - 1; i >= 0; i--) {
                     // push to stack in reverse since left-most derivation
                     if (!p.body[i].isEpsilon()) {

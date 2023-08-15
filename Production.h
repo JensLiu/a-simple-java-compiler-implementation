@@ -5,7 +5,6 @@
 #ifndef COMPILER_PRODUCTION_H
 #define COMPILER_PRODUCTION_H
 
-
 #include <vector>
 #include "GrammarSymbol.h"
 

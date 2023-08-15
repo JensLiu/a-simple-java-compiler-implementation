@@ -36,6 +36,7 @@ public:
     [[nodiscard]] SymbolType getType() const;
     [[nodiscard]] std::string getNonTerminal() const;
     [[nodiscard]] Token::TokenType getTerminal() const;
+    [[nodiscard]] std::string toString() const;
 
     [[nodiscard]] bool isTerminal() const;
     [[nodiscard]] bool isEOF() const;

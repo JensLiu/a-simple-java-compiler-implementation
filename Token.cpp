@@ -80,11 +80,13 @@ const std::unordered_map<Token::TokenType, std::string> Token::tokenName = {
         {Token::TokenType::IMPORT,                "import"},
         {Token::TokenType::FINAL,                 "final"},
         {Token::TokenType::INT,                   "int"},
+        {Token::TokenType::LONG,                  "long"},
         {Token::TokenType::FLOAT,                 "float"},
-        {Token::TokenType::BOOL,                  "bool"},
+        {Token::TokenType::DOUBLE,                "double"},
+        {Token::TokenType::BOOL,                  "boolean"},
         {Token::TokenType::CHAR,                  "char"},
-        {Token::TokenType::STRING,                "string"},
         {Token::TokenType::VOID,                  "void"},
+        {Token::TokenType::FOR,                   "for"},
         {Token::TokenType::IDENTIFIER,            "id"},
         {Token::TokenType::INTEGER_LITERAL,       "int_literal"},
         {Token::TokenType::FLOAT_LITERAL,         "float_literal"},
@@ -100,8 +102,8 @@ const std::unordered_map<Token::TokenType, std::string> Token::tokenName = {
         {Token::TokenType::TILDE,                 "~"},
         {Token::TokenType::AMPERSAND,             "&"},
         {Token::TokenType::PIPE,                  "|"},
-        {Token::TokenType::EQUALS,                "="},
-        {Token::TokenType::NOT_EQUAL,             "!="},
+        {Token::TokenType::EQUALS,                "=="},
+        {Token::TokenType::NOT_EQUALS,            "!="},
         {Token::TokenType::LESS_THAN,             "<"},
         {Token::TokenType::GREATER_THAN,          ">"},
         {Token::TokenType::LESS_THAN_OR_EQUAL,    "<="},
@@ -181,7 +183,7 @@ Token Token::fromFloat(const std::string &lexeme, int line, int column) {
 }
 
 std::string toBinaryRep(int value) {
-    uint32_t* ptr = reinterpret_cast<uint32_t*>(&value);
+    uint32_t *ptr = reinterpret_cast<uint32_t *>(&value);
     uint32_t intValue = *ptr;
 
     std::string binaryString;
@@ -195,7 +197,7 @@ std::string toBinaryRep(int value) {
 }
 
 std::string toBinaryRep(double value) {
-    uint64_t* ptr = reinterpret_cast<uint64_t*>(&value);
+    uint64_t *ptr = reinterpret_cast<uint64_t *>(&value);
     uint64_t intValue = *ptr;
 
     std::string binaryString;
@@ -215,10 +217,11 @@ std::ostream &operator<<(std::ostream &os, const Token &token) {
     } else if (token.getTokenType() == Token::TokenType::INTEGER_LITERAL) {
         return os << "<" << token.getTokenType() << "(" << Token::tokenTypeAsString(token.getTokenType())
                   << "), lexeme: " << token.getLexeme() << ", binary: "
-                  <<  toBinaryRep((int)token.data.integerValue) << ">";
+                  << toBinaryRep((int) token.data.integerValue) << ">";
     } else if (token.getTokenType() == Token::TokenType::FLOAT_LITERAL) {
         return os << "<" << token.getTokenType() << "(" << Token::tokenTypeAsString(token.getTokenType())
-                  << "), lexeme: " << token.getLexeme() << ", binary: " << toBinaryRep((double)token.data.floatValue) << ">";
+                  << "), lexeme: " << token.getLexeme() << ", binary: " << toBinaryRep((double) token.data.floatValue)
+                  << ">";
     }
     return os << "<" << token.getTokenType() << "(" << Token::tokenTypeAsString(token.getTokenType()) << "), "
               << token.lexeme << ">";
@@ -227,8 +230,8 @@ std::ostream &operator<<(std::ostream &os, const Token &token) {
 void Token::exportTokenTypeToCSV(const std::string &filename) {
     std::ofstream fout;
     fout.open(filename, std::ios::out | std::ios::trunc);
-    for (int i = 0; i < (int)TokenType::INVALID_TOKEN; i++) {
-        fout << i << "," <<  tokenName.at((TokenType)i) << std::endl;
+    for (int i = 0; i < (int) TokenType::INVALID_TOKEN; i++) {
+        fout << i << "," << tokenName.at((TokenType) i) << std::endl;
     }
     fout.close();
 }

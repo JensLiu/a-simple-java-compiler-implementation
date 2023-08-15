@@ -17,6 +17,7 @@ std::unordered_map<std::string, Token::TokenType> Lexer::KEYWORDS = {
         {"class",      Token::CLASS},
         {"extends",    Token::EXTENDS},
         {"implements", Token::IMPLEMENTS},
+        {"import",     Token::IMPORT},
         {"new",        Token::NEW},
         {"this",       Token::THIS},
         {"super",      Token::SUPER},
@@ -25,10 +26,11 @@ std::unordered_map<std::string, Token::TokenType> Lexer::KEYWORDS = {
         {"protected",  Token::PROTECTED},
         {"static",     Token::STATIC},
         {"int",        Token::INT},
+        {"long",       Token::LONG},
         {"float",      Token::FLOAT},
-        {"bool",       Token::BOOL},
+        {"double",     Token::DOUBLE},
+        {"boolean",    Token::BOOL},
         {"char",       Token::CHAR},
-        {"string",     Token::STRING},
         {"void",       Token::VOID},
         {"true",       Token::BOOL_LITERAL},
         {"false",      Token::BOOL_LITERAL},
@@ -474,7 +476,7 @@ Token Lexer::handleOperator() {
         if (peek() == '=') {
             forward();
             commitLexeme();
-            return Token(Token::TokenType::NOT_EQUAL, inputBuffer->getLine(), inputBuffer->getColumn());
+            return Token(Token::TokenType::NOT_EQUALS, inputBuffer->getLine(), inputBuffer->getColumn());
         } else {
             commitLexeme();
             return Token(Token::TokenType::LOGICAL_NOT, inputBuffer->getLine(), inputBuffer->getColumn());

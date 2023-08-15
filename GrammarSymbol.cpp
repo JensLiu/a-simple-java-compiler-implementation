@@ -90,3 +90,11 @@ GrammarSymbol::GrammarSymbol() {
     this->terminal = Token::TokenType::INVALID_TOKEN;
     this->nonTerminal = "";
 }
+
+std::string GrammarSymbol::toString() const {
+    if (this->isTerminal()) {
+        return Token::tokenTypeAsString(this->getTerminal());
+    } else {
+        return this->getNonTerminal();
+    }
+}
